@@ -151,8 +151,8 @@ export const dadosIniciais = (): AppData => ({
   metas: [],
   investimentos: [],
   config: {
-    pessoaA: "Pessoa A",
-    pessoaB: "Pessoa B",
+    pessoaA: "Geovanna",
+    pessoaB: "Karen",
     diaFechamentoPadrao: 5,
     fechamentosPorMes: {},
     categorias: [...CATEGORIAS_PADRAO],
@@ -267,3 +267,9 @@ export const num = (v: string) => {
   const n = parseFloat(String(v).replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
+
+export function corPessoa(nome: string, c: Config): string {
+  if (nome === c.pessoaA) return "var(--color-pessoa-a)";
+  if (nome === c.pessoaB) return "var(--color-pessoa-b)";
+  return "var(--color-surface)";
+}

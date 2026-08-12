@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
-import { rotuloResp, EtiquetaResp } from "@/components/LancamentoForm";
+import { EtiquetaResp } from "@/components/LancamentoForm";
 import { useStore } from "@/lib/store";
 import {
   brl,

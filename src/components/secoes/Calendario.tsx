@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import LancamentoForm, { rotuloResp } from "@/components/LancamentoForm";
+import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
 import { Btn, Modal, Panel, SeletorMes, Titulo, Vazio, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import {

@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { Download, Plus, Upload, X } from "lucide-react";
+import { Download, LogOut, Plus, Upload, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Btn, Campo, Modal, Panel, SeletorMes, Titulo, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
+import { encerrarSessao } from "@/components/PortaAcesso";
 import { chaveMes, dataBR, uid, type AppData, type Lancamento } from "@/lib/finance";
 
 function baixar(nome: string, conteudo: BlobPart, tipo: string) {
@@ -285,6 +286,9 @@ export default function Configuracoes() {
             </Btn>
             <Btn variant="info" onClick={() => jsonRef.current?.click()}>
               <Upload size={15} /> Importar backup
+            </Btn>
+            <Btn variant="soft" onClick={() => encerrarSessao()}>
+              <LogOut size={15} /> Encerrar sessão
             </Btn>
             <Btn
               variant="danger"

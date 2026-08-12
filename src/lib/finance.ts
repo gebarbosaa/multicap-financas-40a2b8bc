@@ -271,5 +271,5 @@ export const num = (v: string) => {
 export function corPessoa(nome: string, c: Config): string {
   if (nome === c.pessoaA) return "var(--color-pessoa-a)";
   if (nome === c.pessoaB) return "var(--color-pessoa-b)";
-  return "var(--color-surface)";
+  return "var(--color-chart-5)";
 }

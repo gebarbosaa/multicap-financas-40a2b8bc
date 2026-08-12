@@ -21,6 +21,7 @@ import {
   dataBR,
   hojeISO,
   porCategoria,
+  corPessoa,
   porResponsavel,
   totaisDoMes,
   vencendoEmBreve,
@@ -201,7 +202,13 @@ export default function VisaoGeral() {
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {nomes.map((n) => (
-          <Kpi key={n} rotulo={n === "Conjunta" ? "Ambas" : n} valor={resp[n] ?? 0} />
+          <div
+            key={n}
+            className="rounded-2xl"
+            style={{ borderLeft: `6px solid ${corPessoa(n, data.config)}`, overflow: "hidden" }}
+          >
+            <Kpi rotulo={n === "Conjunta" ? "Ambas" : n} valor={resp[n] ?? 0} />
+          </div>
         ))}
       </div>
 
@@ -218,7 +225,11 @@ export default function VisaoGeral() {
                 <XAxis dataKey="nome" tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" />
                 <YAxis tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" width={60} />
                 <Tooltip {...tooltipStyle} cursor={{ fill: "var(--color-surface)" }} />
-                <Bar dataKey="valor" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="valor" radius={[8, 8, 0, 0]}>
+                  {nomes.map((n) => (
+                    <Cell key={n} fill={corPessoa(n, data.config)} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

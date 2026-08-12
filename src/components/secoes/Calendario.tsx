@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import LancamentoForm, { rotuloResp } from "@/components/LancamentoForm";
+import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
 import { Btn, Modal, Panel, SeletorMes, Titulo, Vazio, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import {
@@ -116,7 +116,7 @@ export default function Calendario() {
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold">{l.descricao}</p>
                   <p className="text-[10px] font-semibold text-muted-foreground">
-                    {l.categoria} · {rotuloResp(l.responsavel)}
+                    {l.categoria} · <EtiquetaResp nome={l.responsavel} />
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

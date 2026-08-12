@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { rotuloResp, useResponsaveis } from "@/components/LancamentoForm";
+import { rotuloResp, useResponsaveis, EtiquetaResp } from "@/components/LancamentoForm";
 import { Btn, Campo, Modal, Panel, Titulo, Vazio, useConfirm } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { MESES, brl, num, uid, type CustoFixo } from "@/lib/finance";
@@ -71,7 +71,7 @@ export default function CustosFixos() {
                     <p className="truncate text-xs font-bold">{c.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
                       Vence dia {String(c.diaVencimento).padStart(2, "0")} · {c.categoria} ·{" "}
-                      {c.formaPagamento} · {rotuloResp(c.responsavel)}
+                      {c.formaPagamento} · <EtiquetaResp nome={c.responsavel} />
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

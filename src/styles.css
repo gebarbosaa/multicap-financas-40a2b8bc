@@ -30,6 +30,9 @@
   --color-info: var(--info);
   --color-warning: var(--warning);
   --color-surface: var(--surface);
+  --color-rosa: var(--rosa);
+  --color-pessoa-a: var(--pessoa-a);
+  --color-pessoa-b: var(--pessoa-b);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -74,6 +77,9 @@
   --chart-3: oklch(0.7444 0.132 78.57);
   --chart-4: oklch(0.6377 0.1755 27.62);
   --chart-5: oklch(0.6108 0.034 131.76);
+  --rosa: #f4c6d4;
+  --pessoa-a: #c9d9b8;
+  --pessoa-b: #f4c6d4;
 }
 
 @layer base {

@@ -16,6 +16,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
+import PortaAcesso from "@/components/PortaAcesso";
 import VisaoGeral from "@/components/secoes/VisaoGeral";
 import Calendario from "@/components/secoes/Calendario";
 import FluxoMensal from "@/components/secoes/FluxoMensal";
@@ -74,6 +75,7 @@ function App() {
   const Conteudo = atual.C;
 
   return (
+    <PortaAcesso>
     <StoreProvider>
       <div className="min-h-screen bg-background">
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-[236px] flex-col border-r border-border bg-card px-3 py-5 min-[900px]:flex">
@@ -135,5 +137,6 @@ function App() {
         </nav>
       </div>
     </StoreProvider>
+    </PortaAcesso>
   );
 }

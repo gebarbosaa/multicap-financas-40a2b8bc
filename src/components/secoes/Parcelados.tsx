@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { rotuloResp, useResponsaveis } from "@/components/LancamentoForm";
+import { rotuloResp, useResponsaveis, EtiquetaResp } from "@/components/LancamentoForm";
 import {
   Btn,
   Campo,
@@ -95,7 +95,7 @@ export default function Parcelados() {
                     <p className="truncate text-xs font-bold">{p.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
                       {dataBR(p.dataCompra)} · {brl(p.valorTotal)} em {p.numeroParcelas}x ·{" "}
-                      {p.categoria} · {p.formaPagamento} · {rotuloResp(p.responsavel)}
+                      {p.categoria} · {p.formaPagamento} · <EtiquetaResp nome={p.responsavel} />
                     </p>
                     <p className="num mt-1 text-[10px] font-bold">
                       {pos > 0 ? (

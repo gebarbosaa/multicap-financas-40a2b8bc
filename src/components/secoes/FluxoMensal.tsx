@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import LancamentoForm, { rotuloResp } from "@/components/LancamentoForm";
+import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
 import { Btn, Modal, Panel, SeletorMes, Titulo, Vazio, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { brl, dataBR, lancamentosDoMes, type Lancamento } from "@/lib/finance";
@@ -57,7 +57,7 @@ export default function FluxoMensal() {
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold">{l.descricao}</p>
                   <p className="num text-[10px] font-semibold text-muted-foreground">
-                    {dataBR(l.data)} · {l.categoria} · {l.formaPagamento} · {rotuloResp(l.responsavel)}
+                    {dataBR(l.data)} · {l.categoria} · {l.formaPagamento} · <EtiquetaResp nome={l.responsavel} />
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

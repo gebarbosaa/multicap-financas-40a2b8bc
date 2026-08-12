@@ -1,10 +1,24 @@
 import { useState } from "react";
 import { Btn, Campo } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
-import { hojeISO, num, uid, type Lancamento } from "@/lib/finance";
+import { corPessoa, hojeISO, num, uid, type Lancamento } from "@/lib/finance";
 
 export function rotuloResp(r: string) {
   return r === "Conjunta" ? "Ambas" : r;
+}
+
+export function EtiquetaResp({ nome }: { nome: string }) {
+  const { data } = useStore();
+  const cor = corPessoa(nome, data.config);
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-foreground"
+      style={{ background: cor, border: "1px solid oklch(0 0 0 / 0.06)" }}
+    >
+      <span className="size-1.5 rounded-full bg-foreground/40" />
+      {rotuloResp(nome)}
+    </span>
+  );
 }
 
 export function useResponsaveis() {

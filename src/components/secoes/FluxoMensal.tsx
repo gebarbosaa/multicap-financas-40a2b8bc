@@ -57,7 +57,7 @@ export default function FluxoMensal() {
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold">{l.descricao}</p>
                   <p className="num text-[10px] font-semibold text-muted-foreground">
-                    {dataBR(l.data)} · {l.categoria} · {l.formaPagamento} · {rotuloResp(l.responsavel)}
+                    {dataBR(l.data)} · {l.categoria} · {l.formaPagamento} · <EtiquetaResp nome={l.responsavel} />
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
-import { rotuloResp } from "@/components/LancamentoForm";
+import { rotuloResp, EtiquetaResp } from "@/components/LancamentoForm";
 import { useStore } from "@/lib/store";
 import {
   brl,
@@ -66,7 +66,7 @@ export default function Faturas() {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold">{l.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
-                      {dataBR(l.data)} · {l.categoria} · {rotuloResp(l.responsavel)}
+                      {dataBR(l.data)} · {l.categoria} · <EtiquetaResp nome={l.responsavel} />
                     </p>
                   </div>
                   <span className="num text-xs font-bold">{brl(l.valor)}</span>
@@ -89,7 +89,7 @@ export default function Faturas() {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold">{p.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
-                      Parcela {pos}/{p.numeroParcelas} · {p.categoria} · {rotuloResp(p.responsavel)}
+                      Parcela {pos}/{p.numeroParcelas} · {p.categoria} · <EtiquetaResp nome={p.responsavel} />
                     </p>
                   </div>
                   <span className="num text-xs font-bold">{brl(valorParcela(p))}</span>
@@ -113,7 +113,7 @@ export default function Faturas() {
                     <p className="truncate text-xs font-bold">{c.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
                       Vence dia {String(c.diaVencimento).padStart(2, "0")} · {c.categoria} ·{" "}
-                      {rotuloResp(c.responsavel)}
+<EtiquetaResp nome={c.responsavel} />
                     </p>
                   </div>
                   <span className="num text-xs font-bold">{brl(c.valor)}</span>

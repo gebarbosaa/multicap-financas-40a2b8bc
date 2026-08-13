@@ -154,6 +154,8 @@ export const dadosIniciais = (): AppData => ({
   agenda: [],
   metas: [],
   investimentos: [],
+  pagamentos: {},
+
   config: {
     pessoaA: "Geovanna",
     pessoaB: "Karen",

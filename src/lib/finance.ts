@@ -80,6 +80,8 @@ export interface Config {
   categorias: string[];
   formasPagamento: string[];
   categoriasAgenda: string[];
+  capa?: string;
+  nomeGrupo?: string;
 }
 
 export interface AppData {
@@ -91,8 +93,10 @@ export interface AppData {
   agenda: EventoAgenda[];
   metas: Meta[];
   investimentos: Investimento[];
+  pagamentos: Record<string, boolean>;
   config: Config;
 }
+
 
 export const CATEGORIAS_PADRAO = [
   "Moradia",

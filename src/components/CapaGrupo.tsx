@@ -75,7 +75,10 @@ export default function CapaGrupo() {
       </button>
       {capa && (
         <button
-          onClick={() => setData((d) => ({ ...d, config: { ...d.config, capa: undefined } }))}
+          onClick={() => setData((d) => {
+            const { capa: _r, ...cfg } = d.config;
+            return { ...d, config: cfg };
+          })}
           className="absolute right-3 top-14 rounded-full bg-card/85 px-2 py-1 text-[9px] font-bold text-muted-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-destructive"
         >
           Remover

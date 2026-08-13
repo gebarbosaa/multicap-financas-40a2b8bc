@@ -152,13 +152,12 @@ export default function Parcelados() {
             />
           </Campo>
           <Campo label="Data da compra">
-            <input
-              className="field num"
-              type="date"
+            <InputData
               value={form.dataCompra}
-              onChange={(e) => setForm({ ...form, dataCompra: e.target.value })}
+              onChange={(iso) => setForm({ ...form, dataCompra: iso })}
             />
           </Campo>
+
           <Campo label="Valor total (R$)">
             <input
               className="field num"

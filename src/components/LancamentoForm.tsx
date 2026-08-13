@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InputData from "@/components/InputData";
 import { Btn, Campo } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { corPessoa, hojeISO, num, uid, type Lancamento } from "@/lib/finance";

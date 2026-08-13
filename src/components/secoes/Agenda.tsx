@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import InputData from "@/components/InputData";
 import { Btn, Campo, Modal, Panel, Titulo, Vazio, useConfirm } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { dataBR, hojeISO, uid, type EventoAgenda } from "@/lib/finance";
@@ -106,13 +107,9 @@ export default function Agenda() {
             />
           </Campo>
           <Campo label="Data">
-            <input
-              className="field num"
-              type="date"
-              value={form.data}
-              onChange={(e) => setForm({ ...form, data: e.target.value })}
-            />
+            <InputData value={form.data} onChange={(iso) => setForm({ ...form, data: iso })} />
           </Campo>
+
           <Campo label="Categoria">
             <select
               className="field"

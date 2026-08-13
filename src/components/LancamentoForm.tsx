@@ -1,4 +1,5 @@
 import { useState } from "react";
+import InputData from "@/components/InputData";
 import { Btn, Campo } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { corPessoa, hojeISO, num, uid, type Lancamento } from "@/lib/finance";
@@ -63,14 +64,10 @@ export default function LancamentoForm({
     >
       {!dataFixa && (
         <Campo label="Data">
-          <input
-            className="field num"
-            type="date"
-            value={form.data}
-            onChange={(e) => setForm({ ...form, data: e.target.value })}
-          />
+          <InputData value={form.data} onChange={(iso) => setForm({ ...form, data: iso })} />
         </Campo>
       )}
+
       <Campo label="Descrição">
         <input
           className="field"

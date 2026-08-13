@@ -6,6 +6,7 @@ import {
   CalendarRange,
   CreditCard,
   LayoutDashboard,
+  ClipboardCheck,
   ListChecks,
   PiggyBank,
   Receipt,
@@ -24,6 +25,7 @@ import Orcamento from "@/components/secoes/Orcamento";
 import CustosFixos from "@/components/secoes/CustosFixos";
 import Parcelados from "@/components/secoes/Parcelados";
 import Faturas from "@/components/secoes/Faturas";
+import ContasAPagar from "@/components/secoes/ContasAPagar";
 import ListaCompras from "@/components/secoes/ListaCompras";
 import ModoMercado from "@/components/secoes/ModoMercado";
 import Agenda from "@/components/secoes/Agenda";
@@ -61,6 +63,7 @@ const SECOES = [
   { id: "fixos", nome: "Custos Fixos", icone: Repeat, C: CustosFixos },
   { id: "parcelados", nome: "Parcelados", icone: CreditCard, C: Parcelados },
   { id: "faturas", nome: "Faturas", icone: Receipt, C: Faturas },
+  { id: "contas", nome: "Contas a Pagar", icone: ClipboardCheck, C: ContasAPagar },
   { id: "lista", nome: "Lista de Compras", icone: ListChecks, C: ListaCompras },
   { id: "mercado", nome: "Modo Mercado", icone: ShoppingCart, C: ModoMercado },
   { id: "agenda", nome: "Agenda", icone: CalendarRange, C: Agenda },

@@ -80,6 +80,8 @@ export interface Config {
   categorias: string[];
   formasPagamento: string[];
   categoriasAgenda: string[];
+  capa?: string;
+  nomeGrupo?: string;
 }
 
 export interface AppData {
@@ -91,8 +93,10 @@ export interface AppData {
   agenda: EventoAgenda[];
   metas: Meta[];
   investimentos: Investimento[];
+  pagamentos: Record<string, boolean>;
   config: Config;
 }
+
 
 export const CATEGORIAS_PADRAO = [
   "Moradia",
@@ -150,6 +154,8 @@ export const dadosIniciais = (): AppData => ({
   agenda: [],
   metas: [],
   investimentos: [],
+  pagamentos: {},
+
   config: {
     pessoaA: "Geovanna",
     pessoaB: "Karen",
@@ -272,4 +278,81 @@ export function corPessoa(nome: string, c: Config): string {
   if (nome === c.pessoaA) return "var(--color-pessoa-a)";
   if (nome === c.pessoaB) return "var(--color-pessoa-b)";
   return "var(--color-chart-5)";
+}
+
+export interface ContaMes {
+  chave: string;
+  nome: string;
+  detalhe: string;
+  valor: number;
+  vencimento: string; // ISO
+  tipo: "Fixo" | "Parcelado" | "Fatura";
+  responsavel: Responsavel;
+}
+
+export const ehCartao = (forma: string) => /cart|cr[eé]dito/i.test(forma);
+
+const diaValido = (dia: number, m: number, y: number) =>
+  Math.min(Math.max(dia || 1, 1), new Date(y, m + 1, 0).getDate());
+
+const isoDia = (dia: number, m: number, y: number) =>
+  `${y}-${String(m + 1).padStart(2, "0")}-${String(diaValido(dia, m, y)).padStart(2, "0")}`;
+
+/** Contas do mês: custos fixos, parcelas e faturas de cartão (agregadas). */
+export function contasDoMes(d: AppData, m: number, y: number): ContaMes[] {
+  const contas: ContaMes[] = [];
+  const mk = chaveMes(m, y);
+
+  d.custosFixos
+    .filter((c) => fixoAtivo(c, m) && !ehCartao(c.formaPagamento))
+    .forEach((c) =>
+      contas.push({
+        chave: `${mk}:fixo:${c.id}`,
+        nome: c.descricao,
+        detalhe: `${c.categoria} · ${c.formaPagamento}`,
+        valor: c.valor,
+        vencimento: isoDia(c.diaVencimento, m, y),
+        tipo: "Fixo",
+        responsavel: c.responsavel,
+      }),
+    );
+
+  d.parcelados.forEach((p) => {
+    const pos = posicaoParcela(p, m, y);
+    if (pos <= 0 || ehCartao(p.formaPagamento)) return;
+    contas.push({
+      chave: `${mk}:parc:${p.id}`,
+      nome: p.descricao,
+      detalhe: `Parcela ${pos}/${p.numeroParcelas} · ${p.categoria}`,
+      valor: valorParcela(p),
+      vencimento: isoDia(Number(p.dataCompra.split("-")[2]), m, y),
+      tipo: "Parcelado",
+      responsavel: p.responsavel,
+    });
+  });
+
+  d.config.formasPagamento.filter(ehCartao).forEach((forma) => {
+    const aVista = lancamentosDoMes(d.lancamentos, m, y)
+      .filter((l) => l.formaPagamento === forma)
+      .reduce((s, l) => s + l.valor, 0);
+    const parcelas = d.parcelados
+      .filter((p) => p.formaPagamento === forma && posicaoParcela(p, m, y) > 0)
+      .reduce((s, p) => s + valorParcela(p), 0);
+    const fixos = d.custosFixos
+      .filter((c) => c.formaPagamento === forma && fixoAtivo(c, m))
+      .reduce((s, c) => s + c.valor, 0);
+    const total = aVista + parcelas + fixos;
+    if (total <= 0) return;
+    contas.push({
+      chave: `${mk}:fatura:${forma}`,
+      nome: `Fatura ${forma}`,
+      detalhe: "À vista + parcelas + fixos no cartão",
+      valor: total,
+      vencimento: isoDia(fechamentoDoMes(d, m, y), m, y),
+      tipo: "Fatura",
+      responsavel: "Conjunta",
+    });
+  });
+
+  return contas.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 }

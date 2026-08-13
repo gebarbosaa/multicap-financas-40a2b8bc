@@ -63,14 +63,10 @@ export default function LancamentoForm({
     >
       {!dataFixa && (
         <Campo label="Data">
-          <input
-            className="field num"
-            type="date"
-            value={form.data}
-            onChange={(e) => setForm({ ...form, data: e.target.value })}
-          />
+          <InputData value={form.data} onChange={(iso) => setForm({ ...form, data: iso })} />
         </Campo>
       )}
+
       <Campo label="Descrição">
         <input
           className="field"

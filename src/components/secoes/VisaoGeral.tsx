@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { AlertTriangle } from "lucide-react";
+import CapaGrupo from "@/components/CapaGrupo";
 import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import {
@@ -97,6 +98,7 @@ export default function VisaoGeral() {
 
   return (
     <div className="animate-section">
+      <CapaGrupo />
       <Titulo sub="Panorama financeiro do mês">Visão Geral</Titulo>
       <SeletorMes {...m} />
 

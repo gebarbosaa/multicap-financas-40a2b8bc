@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import InputData from "@/components/InputData";
 import { rotuloResp, useResponsaveis, EtiquetaResp } from "@/components/LancamentoForm";
 import {
   Btn,

@@ -84,7 +84,7 @@ export default function Parcelados() {
           <Vazio>Nenhum parcelamento cadastrado</Vazio>
         ) : (
           <ul className="space-y-2">
-            {data.parcelados.map((p) => {
+            {[...data.parcelados].reverse().map((p) => {
               const pos = posicaoParcela(p, m.mes, m.ano);
               const faltam = pos > 0 ? p.numeroParcelas - pos : 0;
               return (

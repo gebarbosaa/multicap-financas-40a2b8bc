@@ -4,7 +4,7 @@ import { Btn, Panel, Titulo, Vazio, useConfirm } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { UNIDADES, brl, subtotalItem, type ItemCompra, type UnidadeCompra } from "@/lib/finance";
 
-export default function ModoMercado() {
+export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const { confirmar, elemento } = useConfirm();
   const [ativaId, setAtivaId] = useState(data.listas[0]?.id ?? "");
@@ -26,7 +26,7 @@ export default function ModoMercado() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Modo compras com toque grande e preços">Modo Mercado</Titulo>
+      {!embutido && <Titulo sub="Modo compras com toque grande e preços">Modo Mercado</Titulo>}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {data.listas.map((l) => (

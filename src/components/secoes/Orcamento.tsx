@@ -2,7 +2,7 @@ import { Panel, SeletorMes, Titulo, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import { brl, chaveMes, num, porCategoria } from "@/lib/finance";
 
-export default function Orcamento() {
+export default function Orcamento({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const m = useMes();
   const chave = chaveMes(m.mes, m.ano);
@@ -20,7 +20,7 @@ export default function Orcamento() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Tetos de gasto por categoria">Orçamento Mensal</Titulo>
+      {!embutido && <Titulo sub="Tetos de gasto por categoria">Orçamento Mensal</Titulo>}
       <SeletorMes {...m} />
 
       <div className="mb-4 grid grid-cols-2 gap-4">

@@ -53,7 +53,7 @@ function Linha({
   );
 }
 
-export default function ContasAPagar() {
+export default function ContasAPagar({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const m = useMes();
 
@@ -74,7 +74,7 @@ export default function ContasAPagar() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Checklist de contas do mês">Contas a Pagar</Titulo>
+      {!embutido && <Titulo sub="Checklist de contas do mês">Contas a Pagar</Titulo>}
       <SeletorMes {...m} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-3">

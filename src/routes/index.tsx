@@ -1,36 +1,26 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  BarChart3,
   CalendarDays,
-  CalendarRange,
   CreditCard,
   LayoutDashboard,
   ClipboardCheck,
-  ListChecks,
   PiggyBank,
   Receipt,
-  Repeat,
   Settings,
   ShoppingCart,
-  Target,
   Wallet,
 } from "lucide-react";
 import { StoreProvider } from "@/lib/store";
 import PortaAcesso from "@/components/PortaAcesso";
 import VisaoGeral from "@/components/secoes/VisaoGeral";
 import Calendario from "@/components/secoes/Calendario";
-import FluxoMensal from "@/components/secoes/FluxoMensal";
-import Orcamento from "@/components/secoes/Orcamento";
-import CustosFixos from "@/components/secoes/CustosFixos";
+import Extrato from "@/components/secoes/Extrato";
+import Contas from "@/components/secoes/Contas";
 import Parcelados from "@/components/secoes/Parcelados";
 import Faturas from "@/components/secoes/Faturas";
-import ContasAPagar from "@/components/secoes/ContasAPagar";
-import ListaCompras from "@/components/secoes/ListaCompras";
-import ModoMercado from "@/components/secoes/ModoMercado";
-import Agenda from "@/components/secoes/Agenda";
-import Metas from "@/components/secoes/Metas";
-import Investimentos from "@/components/secoes/Investimentos";
+import Mercado from "@/components/secoes/Mercado";
+import InvestimentosMetas from "@/components/secoes/InvestimentosMetas";
 import Configuracoes from "@/components/secoes/Configuracoes";
 
 export const Route = createFileRoute("/")({
@@ -58,17 +48,12 @@ export const Route = createFileRoute("/")({
 const SECOES = [
   { id: "visao", nome: "Visão Geral", icone: LayoutDashboard, C: VisaoGeral },
   { id: "calendario", nome: "Calendário", icone: CalendarDays, C: Calendario },
-  { id: "fluxo", nome: "Fluxo Mensal", icone: Wallet, C: FluxoMensal },
-  { id: "orcamento", nome: "Orçamento Mensal", icone: BarChart3, C: Orcamento },
-  { id: "fixos", nome: "Custos Fixos", icone: Repeat, C: CustosFixos },
+  { id: "extrato", nome: "Extrato", icone: Wallet, C: Extrato },
+  { id: "contas", nome: "Contas", icone: ClipboardCheck, C: Contas },
   { id: "parcelados", nome: "Parcelados", icone: CreditCard, C: Parcelados },
   { id: "faturas", nome: "Faturas", icone: Receipt, C: Faturas },
-  { id: "contas", nome: "Contas a Pagar", icone: ClipboardCheck, C: ContasAPagar },
-  { id: "lista", nome: "Lista de Compras", icone: ListChecks, C: ListaCompras },
-  { id: "mercado", nome: "Modo Mercado", icone: ShoppingCart, C: ModoMercado },
-  { id: "agenda", nome: "Agenda", icone: CalendarRange, C: Agenda },
-  { id: "metas", nome: "Metas", icone: Target, C: Metas },
-  { id: "investimentos", nome: "Investimentos", icone: PiggyBank, C: Investimentos },
+  { id: "mercado", nome: "Mercado", icone: ShoppingCart, C: Mercado },
+  { id: "investimentos", nome: "Investimentos", icone: PiggyBank, C: InvestimentosMetas },
   { id: "config", nome: "Configurações", icone: Settings, C: Configuracoes },
 ] as const;
 

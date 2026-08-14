@@ -5,7 +5,7 @@ import { Btn, Campo, Modal, Panel, Titulo, Vazio, useConfirm } from "@/component
 import { useStore } from "@/lib/store";
 import { dataBR, hojeISO, uid, type EventoAgenda } from "@/lib/finance";
 
-export default function Agenda() {
+export default function Agenda({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const { confirmar, elemento } = useConfirm();
   const [modal, setModal] = useState<{ aberto: boolean; item?: EventoAgenda }>({ aberto: false });
@@ -43,7 +43,7 @@ export default function Agenda() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Compromissos e lembretes">Agenda</Titulo>
+      {!embutido && <Titulo sub="Compromissos e lembretes">Agenda</Titulo>}
 
       <div className="mb-4 flex justify-end">
         <Btn onClick={() => abrir()}>

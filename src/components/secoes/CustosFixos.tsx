@@ -5,7 +5,7 @@ import { Btn, Campo, Modal, Panel, Titulo, Vazio, useConfirm } from "@/component
 import { useStore } from "@/lib/store";
 import { MESES, brl, num, uid, type CustoFixo } from "@/lib/finance";
 
-export default function CustosFixos() {
+export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const resps = useResponsaveis();
   const { confirmar, elemento } = useConfirm();
@@ -47,7 +47,7 @@ export default function CustosFixos() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Despesas recorrentes mensais">Custos Fixos</Titulo>
+      {!embutido && <Titulo sub="Despesas recorrentes mensais">Custos Fixos</Titulo>}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="panel px-4 py-3">

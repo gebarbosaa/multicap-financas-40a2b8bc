@@ -4,7 +4,7 @@ import { Btn, Campo, Modal, Panel, Titulo, Vazio, useConfirm } from "@/component
 import { useStore } from "@/lib/store";
 import { brl, num, uid, type Meta } from "@/lib/finance";
 
-export default function Metas() {
+export default function Metas({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const { confirmar, elemento } = useConfirm();
   const [modal, setModal] = useState<{ aberto: boolean; item?: Meta }>({ aberto: false });
@@ -35,7 +35,7 @@ export default function Metas() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Objetivos financeiros do casal">Metas</Titulo>
+      {!embutido && <Titulo sub="Objetivos financeiros do casal">Metas</Titulo>}
 
       <div className="mb-4 flex justify-end">
         <Btn onClick={() => abrir()}>

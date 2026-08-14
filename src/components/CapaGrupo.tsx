@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { Camera, Users } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, SlidersHorizontal, Users } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 /** Redimensiona e converte para data URL leve (persistível em localStorage). */
@@ -32,7 +32,10 @@ function comprimir(file: File): Promise<string> {
 export default function CapaGrupo() {
   const { data, setData } = useStore();
   const input = useRef<HTMLInputElement>(null);
+  const [ajustando, setAjustando] = useState(false);
   const capa = data.config.capa;
+  const posY = data.config.capaPos ?? 50;
+  const zoom = data.config.capaZoom ?? 100;
   const nome = data.config.nomeGrupo?.trim() || `${data.config.pessoaA} & ${data.config.pessoaB}`;
 
   const escolher = async (file: File | undefined) => {
@@ -48,7 +51,12 @@ export default function CapaGrupo() {
   return (
     <div className="panel relative mb-5 h-40 overflow-hidden p-0 min-[900px]:h-52">
       {capa ? (
-        <img src={capa} alt={`Foto de capa de ${nome}`} className="size-full object-cover" />
+        <img
+          src={capa}
+          alt={`Foto de capa de ${nome}`}
+          className="size-full object-cover"
+          style={{ objectPosition: `50% ${posY}%`, transform: `scale(${zoom / 100})` }}
+        />
       ) : (
         <div className="size-full bg-surface" />
       )}
@@ -65,25 +73,73 @@ export default function CapaGrupo() {
         </div>
       </div>
 
-      <button
-        onClick={() => input.current?.click()}
-        aria-label="Trocar foto de capa"
-        title="Trocar foto de capa"
-        className="absolute right-3 top-3 rounded-full bg-card/85 p-2 text-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-primary"
-      >
-        <Camera size={15} />
-      </button>
-      {capa && (
+      <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
         <button
-          onClick={() => setData((d) => {
-            const { capa: _r, ...cfg } = d.config;
-            return { ...d, config: cfg };
-          })}
-          className="absolute right-3 top-14 rounded-full bg-card/85 px-2 py-1 text-[9px] font-bold text-muted-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-destructive"
+          onClick={() => input.current?.click()}
+          aria-label="Trocar foto de capa"
+          title="Trocar foto de capa"
+          className="rounded-full bg-card/85 p-2 text-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-primary"
         >
-          Remover
+          <Camera size={15} />
         </button>
+        {capa && (
+          <>
+            <button
+              onClick={() => setAjustando((v) => !v)}
+              aria-label="Ajustar foto de capa"
+              title="Ajustar enquadramento"
+              className="rounded-full bg-card/85 p-2 text-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-primary"
+            >
+              <SlidersHorizontal size={15} />
+            </button>
+            <button
+              onClick={() =>
+                setData((d) => {
+                  const { capa: _r, capaPos: _p, capaZoom: _z, ...cfg } = d.config;
+                  return { ...d, config: cfg };
+                })
+              }
+              className="rounded-full bg-card/85 px-2 py-1 text-[9px] font-bold text-muted-foreground shadow-soft backdrop-blur-sm transition-colors hover:text-destructive"
+            >
+              Remover
+            </button>
+          </>
+        )}
+      </div>
+
+      {capa && ajustando && (
+        <div className="absolute inset-x-3 top-3 mr-14 rounded-2xl bg-card/90 p-3 shadow-soft backdrop-blur-sm">
+          <label className="label-xs" htmlFor="capa-pos">
+            Posição vertical
+          </label>
+          <input
+            id="capa-pos"
+            type="range"
+            min={0}
+            max={100}
+            value={posY}
+            className="w-full accent-[var(--color-primary)]"
+            onChange={(e) =>
+              setData((d) => ({ ...d, config: { ...d.config, capaPos: Number(e.target.value) } }))
+            }
+          />
+          <label className="label-xs" htmlFor="capa-zoom">
+            Zoom
+          </label>
+          <input
+            id="capa-zoom"
+            type="range"
+            min={100}
+            max={220}
+            value={zoom}
+            className="w-full accent-[var(--color-primary)]"
+            onChange={(e) =>
+              setData((d) => ({ ...d, config: { ...d.config, capaZoom: Number(e.target.value) } }))
+            }
+          />
+        </div>
       )}
+
       <input
         ref={input}
         type="file"

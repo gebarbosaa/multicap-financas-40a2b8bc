@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
+import Agenda from "@/components/secoes/Agenda";
 import { Btn, Modal, Panel, SeletorMes, Titulo, Vazio, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import {
@@ -25,6 +26,14 @@ export default function Calendario() {
   const primeiroDiaSemana = new Date(m.ano, m.mes, 1).getDay();
   const diasNoMes = new Date(m.ano, m.mes + 1, 0).getDate();
   const hoje = hojeISO();
+
+  const eventosPorDia: Record<number, number> = {};
+  data.agenda.forEach((e) => {
+    if (e.data.startsWith(chaveMes(m.mes, m.ano))) {
+      const dia = Number(e.data.split("-")[2]);
+      eventosPorDia[dia] = (eventosPorDia[dia] ?? 0) + 1;
+    }
+  });
 
   const iso = (dia: number) => `${chaveMes(m.mes, m.ano)}-${String(dia).padStart(2, "0")}`;
   const doDia = diaAberto ? data.lancamentos.filter((l) => l.data === diaAberto) : [];
@@ -72,6 +81,7 @@ export default function Calendario() {
             const valor = gastos[dia] ?? 0;
             const n = nivel(valor);
             const ehHoje = iso(dia) === hoje;
+            const eventos = eventosPorDia[dia] ?? 0;
             return (
               <button
                 key={dia}
@@ -86,18 +96,50 @@ export default function Calendario() {
                 >
                   {String(dia).padStart(2, "0")}
                 </span>
-                {valor > 0 && (
-                  <span
-                    className={`num text-[9px] font-bold leading-tight ${n >= 3 ? "text-primary-foreground" : "text-muted-foreground"}`}
-                  >
-                    {brl(valor)}
-                  </span>
-                )}
+                <span className="mt-auto flex w-full flex-col items-start gap-1">
+                  {eventos > 0 && (
+                    <span className="flex gap-0.5">
+                      {Array.from({ length: Math.min(eventos, 3) }).map((_, k) => (
+                        <span key={k} className="size-1.5 rounded-full bg-rosa" />
+                      ))}
+                    </span>
+                  )}
+                  {valor > 0 && (
+                    <span
+                      className={`num w-full truncate text-[9px] font-bold leading-tight ${n >= 3 ? "text-primary-foreground" : "text-muted-foreground"}`}
+                    >
+                      {brl(valor)}
+                    </span>
+                  )}
+                </span>
               </button>
             );
           })}
         </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-3">
+          <span className="label-xs">Intensidade</span>
+          <span className="flex items-center gap-1">
+            {fundo.map((f, i) => (
+              <span
+                key={i}
+                className="size-4 rounded-md border border-border"
+                style={{ background: f }}
+              />
+            ))}
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-rosa" /> evento da agenda
+          </span>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+            <span className="size-3 rounded-md border-2 border-warning" /> hoje
+          </span>
+        </div>
       </Panel>
+
+      <div className="mt-8">
+        <Titulo sub="Compromissos e lembretes">Agenda</Titulo>
+        <Agenda embutido />
+      </div>
 
       <Modal
         aberto={!!diaAberto}

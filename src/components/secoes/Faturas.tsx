@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import {
   brl,
   dataBR,
+  ehCartao,
   fechamentoDoMes,
   fixoAtivo,
   lancamentosDoMes,
@@ -15,7 +16,8 @@ import {
 export default function Faturas() {
   const { data } = useStore();
   const m = useMes();
-  const [forma, setForma] = useState(data.config.formasPagamento[0] ?? "Cartão de Crédito");
+  const cartoes = data.config.formasPagamento.filter(ehCartao);
+  const [forma, setForma] = useState(cartoes[0] ?? "Cartão de Crédito");
 
   const aVista = lancamentosDoMes(data.lancamentos, m.mes, m.ano).filter(
     (l) => l.formaPagamento === forma,
@@ -34,14 +36,16 @@ export default function Faturas() {
 
   return (
     <div className="animate-section">
-      <Titulo sub={`Fechamento no dia ${String(fechamento).padStart(2, "0")}`}>Faturas</Titulo>
+      <Titulo sub={`Somente cartão de crédito · fechamento no dia ${String(fechamento).padStart(2, "0")}`}>
+        Faturas
+      </Titulo>
       <SeletorMes {...m} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
         <div className="panel p-4">
-          <p className="label-xs">Forma de pagamento</p>
+          <p className="label-xs">Cartão de crédito</p>
           <select className="field" value={forma} onChange={(e) => setForma(e.target.value)}>
-            {data.config.formasPagamento.map((f) => (
+            {cartoes.map((f) => (
               <option key={f}>{f}</option>
             ))}
           </select>

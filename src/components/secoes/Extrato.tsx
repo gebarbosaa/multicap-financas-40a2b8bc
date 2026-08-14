@@ -146,7 +146,7 @@ export default function Extrato() {
                     <>
                       <button
                         className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-info"
-                        onClick={() => setModal({ aberto: true, item: i.lancamento })}
+                        onClick={() => i.lancamento && setModal({ aberto: true, item: i.lancamento })}
                         aria-label="Editar"
                       >
                         <Pencil size={15} />

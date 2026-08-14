@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Download, LogOut, Plus, Upload, X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Btn, Campo, Modal, Panel, SeletorMes, Titulo, useConfirm, useMes } from "@/components/ui-kit";
+import Orcamento from "@/components/secoes/Orcamento";
 import { useStore } from "@/lib/store";
 import { encerrarSessao } from "@/components/PortaAcesso";
 import { chaveMes, dataBR, uid, type AppData, type Lancamento } from "@/lib/finance";
@@ -332,6 +333,11 @@ export default function Configuracoes() {
             }}
           />
         </Panel>
+      </div>
+
+      <div className="mt-8">
+        <Titulo sub="Tetos de gasto por categoria, definidos mês a mês">Orçamento Mensal</Titulo>
+        <Orcamento embutido />
       </div>
 
       <Modal aberto={!!aviso} onClose={() => setAviso(null)} titulo="Aviso" largura="max-w-sm">

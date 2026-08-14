@@ -81,6 +81,8 @@ export interface Config {
   formasPagamento: string[];
   categoriasAgenda: string[];
   capa?: string;
+  capaPos?: number;
+  capaZoom?: number;
   nomeGrupo?: string;
 }
 

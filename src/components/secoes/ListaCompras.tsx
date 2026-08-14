@@ -19,7 +19,7 @@ const rotuloUnidade: Record<UnidadeCompra, string> = {
   CX: "CAIXA",
 };
 
-export default function ListaCompras() {
+export default function ListaCompras({ embutido }: { embutido?: boolean } = {}) {
   const { data, setData } = useStore();
   const { confirmar, elemento } = useConfirm();
   const [ativaId, setAtivaId] = useState(data.listas[0]?.id ?? "");
@@ -49,7 +49,7 @@ export default function ListaCompras() {
 
   return (
     <div className="animate-section">
-      <Titulo sub="Organize suas compras por lista">Lista de Compras</Titulo>
+      {!embutido && <Titulo sub="Organize suas compras por lista">Lista de Compras</Titulo>}
 
       <Panel titulo="Minhas listas" className="mb-4">
         <div className="flex flex-wrap gap-2">

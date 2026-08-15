@@ -19,6 +19,9 @@ export interface CustoFixo {
   diaVencimento: number;
   mesesAtivos: number[];
   responsavel: Responsavel;
+  /** Marca este custo fixo como uma assinatura/recorrência (Netflix, academia, etc.),
+   * para aparecer no painel dedicado "Assinaturas" em vez do de Custos Fixos. */
+  assinatura?: boolean;
 }
 
 export interface Parcelado {
@@ -72,13 +75,21 @@ export interface Investimento {
   valorAtual: number;
 }
 
+export type TipoFormaPagamento = "Débito" | "PIX" | "Crédito";
+
+export interface FormaPagamento {
+  id: string;
+  nome: string;
+  tipo: TipoFormaPagamento;
+}
+
 export interface Config {
   pessoaA: string;
   pessoaB: string;
   diaFechamentoPadrao: number;
   fechamentosPorMes: Record<string, number>;
   categorias: string[];
-  formasPagamento: string[];
+  formasPagamento: FormaPagamento[];
   categoriasAgenda: string[];
   capa?: string;
   capaPos?: number;
@@ -99,7 +110,6 @@ export interface AppData {
   config: Config;
 }
 
-
 export const CATEGORIAS_PADRAO = [
   "Moradia",
   "Serviços Essenciais",
@@ -113,7 +123,11 @@ export const CATEGORIAS_PADRAO = [
   "Presentes & Vestuário",
 ];
 
-export const FORMAS_PADRAO = ["Débito", "Cartão de Crédito", "Pix"];
+export const FORMAS_PADRAO: Array<Pick<FormaPagamento, "nome" | "tipo">> = [
+  { nome: "Débito", tipo: "Débito" },
+  { nome: "Cartão de Crédito", tipo: "Crédito" },
+  { nome: "Pix", tipo: "PIX" },
+];
 export const CATEGORIAS_AGENDA_PADRAO = ["Mercado", "Contas", "Folga", "Lazer"];
 
 export const CATEGORIAS_COMPRA = [
@@ -164,7 +178,7 @@ export const dadosIniciais = (): AppData => ({
     diaFechamentoPadrao: 5,
     fechamentosPorMes: {},
     categorias: [...CATEGORIAS_PADRAO],
-    formasPagamento: [...FORMAS_PADRAO],
+    formasPagamento: FORMAS_PADRAO.map((f) => ({ ...f, id: uid() })),
     categoriasAgenda: [...CATEGORIAS_AGENDA_PADRAO],
   },
 });
@@ -282,6 +296,25 @@ export function corPessoa(nome: string, c: Config): string {
   return "var(--color-chart-5)";
 }
 
+/** Assinaturas/recorrências (Netflix, Spotify, academia, etc.) são custos fixos
+ * marcados com `assinatura: true` — assim já entram automaticamente em todos os
+ * cálculos de orçamento, fatura do cartão e contas do mês, sem lógica duplicada. */
+export const listaAssinaturas = (d: AppData) => d.custosFixos.filter((c) => c.assinatura);
+
+/** Quanto essa assinatura custa por ano, considerando os meses em que ela cobra
+ * (mensal = 12 meses ativos; anual = 1 mês ativo). */
+export const custoAnualAssinatura = (c: CustoFixo) => c.valor * c.mesesAtivos.length;
+
+export function totaisAssinaturas(d: AppData) {
+  const assinaturas = listaAssinaturas(d);
+  const mesAtual = new Date().getMonth();
+  const mensal = assinaturas
+    .filter((c) => c.mesesAtivos.includes(mesAtual))
+    .reduce((s, c) => s + c.valor, 0);
+  const anual = assinaturas.reduce((s, c) => s + custoAnualAssinatura(c), 0);
+  return { mensal, anual, quantidade: assinaturas.length };
+}
+
 export interface ContaMes {
   chave: string;
   nome: string;
@@ -292,7 +325,18 @@ export interface ContaMes {
   responsavel: Responsavel;
 }
 
-export const ehCartao = (forma: string) => /cart|cr[eé]dito/i.test(forma);
+export const ehCartao = (forma: FormaPagamento | string): boolean => {
+  if (typeof forma === "string") return /cart|cr[eé]dito/i.test(forma);
+  return forma.tipo === "Crédito";
+};
+
+/** Dado o nome usado num lançamento/custo (string), descobre o tipo real
+ * cadastrado em Configurações; se não achar (dado legado), tenta inferir. */
+export function tipoFormaPagamento(nomeForma: string, config: Config): TipoFormaPagamento {
+  const achada = config.formasPagamento.find((f) => f.nome === nomeForma);
+  if (achada) return achada.tipo;
+  return ehCartao(nomeForma) ? "Crédito" : "Débito";
+}
 
 const diaValido = (dia: number, m: number, y: number) =>
   Math.min(Math.max(dia || 1, 1), new Date(y, m + 1, 0).getDate());
@@ -333,28 +377,31 @@ export function contasDoMes(d: AppData, m: number, y: number): ContaMes[] {
     });
   });
 
-  d.config.formasPagamento.filter(ehCartao).forEach((forma) => {
-    const aVista = lancamentosDoMes(d.lancamentos, m, y)
-      .filter((l) => l.formaPagamento === forma)
-      .reduce((s, l) => s + l.valor, 0);
-    const parcelas = d.parcelados
-      .filter((p) => p.formaPagamento === forma && posicaoParcela(p, m, y) > 0)
-      .reduce((s, p) => s + valorParcela(p), 0);
-    const fixos = d.custosFixos
-      .filter((c) => c.formaPagamento === forma && fixoAtivo(c, m))
-      .reduce((s, c) => s + c.valor, 0);
-    const total = aVista + parcelas + fixos;
-    if (total <= 0) return;
-    contas.push({
-      chave: `${mk}:fatura:${forma}`,
-      nome: `Fatura ${forma}`,
-      detalhe: "À vista + parcelas + fixos no cartão",
-      valor: total,
-      vencimento: isoDia(fechamentoDoMes(d, m, y), m, y),
-      tipo: "Fatura",
-      responsavel: "Conjunta",
+  d.config.formasPagamento
+    .filter(ehCartao)
+    .map((f) => f.nome)
+    .forEach((forma) => {
+      const aVista = lancamentosDoMes(d.lancamentos, m, y)
+        .filter((l) => l.formaPagamento === forma)
+        .reduce((s, l) => s + l.valor, 0);
+      const parcelas = d.parcelados
+        .filter((p) => p.formaPagamento === forma && posicaoParcela(p, m, y) > 0)
+        .reduce((s, p) => s + valorParcela(p), 0);
+      const fixos = d.custosFixos
+        .filter((c) => c.formaPagamento === forma && fixoAtivo(c, m))
+        .reduce((s, c) => s + c.valor, 0);
+      const total = aVista + parcelas + fixos;
+      if (total <= 0) return;
+      contas.push({
+        chave: `${mk}:fatura:${forma}`,
+        nome: `Fatura ${forma}`,
+        detalhe: "À vista + parcelas + fixos no cartão",
+        valor: total,
+        vencimento: isoDia(fechamentoDoMes(d, m, y), m, y),
+        tipo: "Fatura",
+        responsavel: "Conjunta",
+      });
     });
-  });
 
   return contas.sort((a, b) => a.vencimento.localeCompare(b.vencimento));
 }

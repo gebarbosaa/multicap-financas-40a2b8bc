@@ -16,22 +16,22 @@ export type Database = {
     Tables: {
       multicap_dados: {
         Row: {
+          atualizado_em: string
+          atualizado_por: string | null
           codigo: string
           dados: Json
-          atualizado_por: string | null
-          atualizado_em: string
         }
         Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
           codigo: string
           dados?: Json
-          atualizado_por?: string | null
-          atualizado_em?: string
         }
         Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
           codigo?: string
           dados?: Json
-          atualizado_por?: string | null
-          atualizado_em?: string
         }
         Relationships: []
       }

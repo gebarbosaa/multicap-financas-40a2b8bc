@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+import { Suspense, lazy, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -10,6 +10,7 @@ import {
   LogOut,
   PiggyBank,
   Receipt,
+  Repeat2,
   Settings,
   ShoppingCart,
   Sparkles,
@@ -18,14 +19,19 @@ import {
 import { StoreProvider, useStore } from "@/lib/store";
 import PortaAcesso, { encerrarSessao } from "@/components/PortaAcesso";
 import VisaoGeral from "@/components/secoes/VisaoGeral";
-import Calendario from "@/components/secoes/Calendario";
-import Extrato from "@/components/secoes/Extrato";
-import Contas from "@/components/secoes/Contas";
-import Parcelados from "@/components/secoes/Parcelados";
-import Faturas from "@/components/secoes/Faturas";
-import Mercado from "@/components/secoes/Mercado";
-import InvestimentosMetas from "@/components/secoes/InvestimentosMetas";
-import Configuracoes from "@/components/secoes/Configuracoes";
+
+// Módulos secundários carregados sob demanda (code splitting): só baixam o
+// JS da tela quando o usuário realmente entra nela, deixando a abertura do
+// app mais rápida.
+const Calendario = lazy(() => import("@/components/secoes/Calendario"));
+const Extrato = lazy(() => import("@/components/secoes/Extrato"));
+const Contas = lazy(() => import("@/components/secoes/Contas"));
+const Parcelados = lazy(() => import("@/components/secoes/Parcelados"));
+const Faturas = lazy(() => import("@/components/secoes/Faturas"));
+const Assinaturas = lazy(() => import("@/components/secoes/Assinaturas"));
+const Mercado = lazy(() => import("@/components/secoes/Mercado"));
+const InvestimentosMetas = lazy(() => import("@/components/secoes/InvestimentosMetas"));
+const Configuracoes = lazy(() => import("@/components/secoes/Configuracoes"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,40 +62,19 @@ interface SecaoItem {
   C: ComponentType;
 }
 
-// Agrupado por finalidade, para o menu ficar mais fácil de escanear.
-const GRUPOS: { titulo: string; itens: SecaoItem[] }[] = [
-  {
-    titulo: "Principal",
-    itens: [
-      { id: "visao", nome: "Visão Geral", icone: LayoutDashboard, C: VisaoGeral },
-      { id: "calendario", nome: "Calendário", icone: CalendarDays, C: Calendario },
-      { id: "extrato", nome: "Extrato", icone: Wallet, C: Extrato },
-    ],
-  },
-  {
-    titulo: "Contas",
-    itens: [
-      { id: "contas", nome: "Contas a pagar", icone: ClipboardCheck, C: Contas },
-      { id: "parcelados", nome: "Parcelados", icone: CreditCard, C: Parcelados },
-      { id: "faturas", nome: "Faturas", icone: Receipt, C: Faturas },
-    ],
-  },
-  {
-    titulo: "Planejamento",
-    itens: [
-      { id: "mercado", nome: "Mercado", icone: ShoppingCart, C: Mercado },
-      { id: "investimentos", nome: "Investimentos", icone: PiggyBank, C: InvestimentosMetas },
-    ],
-  },
+// Lista plana, sem agrupamento — todas as abas no mesmo nível.
+const SECOES: SecaoItem[] = [
+  { id: "visao", nome: "Visão Geral", icone: LayoutDashboard, C: VisaoGeral },
+  { id: "calendario", nome: "Calendário", icone: CalendarDays, C: Calendario },
+  { id: "extrato", nome: "Extrato", icone: Wallet, C: Extrato },
+  { id: "contas", nome: "Contas a pagar", icone: ClipboardCheck, C: Contas },
+  { id: "parcelados", nome: "Parcelados", icone: CreditCard, C: Parcelados },
+  { id: "faturas", nome: "Faturas", icone: Receipt, C: Faturas },
+  { id: "assinaturas", nome: "Assinaturas", icone: Repeat2, C: Assinaturas },
+  { id: "mercado", nome: "Mercado", icone: ShoppingCart, C: Mercado },
+  { id: "investimentos", nome: "Investimentos", icone: PiggyBank, C: InvestimentosMetas },
+  { id: "config", nome: "Configurações", icone: Settings, C: Configuracoes },
 ];
-
-const CONFIG_ITEM: SecaoItem = {
-  id: "config",
-  nome: "Configurações",
-  icone: Settings,
-  C: Configuracoes,
-};
-const SECOES: SecaoItem[] = GRUPOS.flatMap((g) => g.itens).concat([CONFIG_ITEM]);
 
 function StatusSincronizacao({ className }: { className?: string }) {
   const { sincronizando, erroSincronizacao, pronto } = useStore();
@@ -147,48 +132,28 @@ function App() {
               <StatusSincronizacao />
             </div>
 
-            <nav className="flex flex-1 flex-col gap-4 overflow-y-auto pb-2">
-              {GRUPOS.map((grupo) => (
-                <div key={grupo.titulo}>
-                  <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
-                    {grupo.titulo}
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {grupo.itens.map((s) => {
-                      const Icone = s.icone;
-                      const ativo = s.id === ativa;
-                      return (
-                        <button
-                          key={s.id}
-                          onClick={() => setAtiva(s.id)}
-                          className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-bold tracking-wide transition-all duration-200 ${
-                            ativo
-                              ? "bg-primary text-primary-foreground shadow-glow"
-                              : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                          }`}
-                        >
-                          <Icone size={16} />
-                          {s.nome}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+            <nav className="flex flex-1 flex-col gap-1 overflow-y-auto pb-2">
+              {SECOES.map((s) => {
+                const Icone = s.icone;
+                const ativo = s.id === ativa;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setAtiva(s.id)}
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-bold tracking-wide transition-all duration-200 ${
+                      ativo
+                        ? "bg-primary text-primary-foreground shadow-glow"
+                        : "text-muted-foreground hover:bg-surface hover:text-foreground"
+                    }`}
+                  >
+                    <Icone size={16} />
+                    {s.nome}
+                  </button>
+                );
+              })}
             </nav>
 
-            <div className="mt-2 flex flex-col gap-1 border-t border-border pt-3">
-              <button
-                onClick={() => setAtiva("config")}
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-bold tracking-wide transition-all duration-200 ${
-                  ativa === "config"
-                    ? "bg-primary text-primary-foreground shadow-glow"
-                    : "text-muted-foreground hover:bg-surface hover:text-foreground"
-                }`}
-              >
-                <Settings size={16} />
-                Configurações
-              </button>
+            <div className="mt-2 border-t border-border pt-3">
               <button
                 onClick={() => encerrarSessao()}
                 className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-bold tracking-wide text-muted-foreground transition-all duration-200 hover:bg-surface hover:text-destructive"
@@ -211,7 +176,15 @@ function App() {
                 <StatusSincronizacao />
               </div>
               <div key={ativa}>
-                <Conteudo />
+                <Suspense
+                  fallback={
+                    <div className="flex items-center gap-2 py-16 text-xs font-bold text-muted-foreground">
+                      <Loader2 size={16} className="animate-spin" /> Carregando…
+                    </div>
+                  }
+                >
+                  <Conteudo />
+                </Suspense>
               </div>
             </div>
           </main>

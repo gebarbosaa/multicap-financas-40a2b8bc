@@ -69,8 +69,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { data: linha, error } = await supabase
-          .from(TABELA)
+        const { data: linha, error } = await tabela()
           .select("dados")
           .eq("codigo", CODIGO_ACESSO)
           .maybeSingle();

@@ -13,10 +13,10 @@ export function EtiquetaResp({ nome }: { nome: string }) {
   const cor = corPessoa(nome, data.config);
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-foreground"
-      style={{ background: cor, border: "1px solid oklch(0 0 0 / 0.06)" }}
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-bold text-primary-foreground"
+      style={{ background: cor }}
     >
-      <span className="size-1.5 rounded-full bg-foreground/40" />
+      <span className="size-1.5 rounded-full bg-primary-foreground/45" />
       {rotuloResp(nome)}
     </span>
   );

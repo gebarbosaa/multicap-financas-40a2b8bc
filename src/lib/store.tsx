@@ -126,7 +126,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     salvarTimeout.current = setTimeout(async () => {
       setSincronizando(true);
       try {
-        const { error } = await supabase.from(TABELA).upsert({
+        const { error } = await tabela().upsert({
           codigo: CODIGO_ACESSO,
           dados: data as unknown as Json,
           atualizado_por: SESSAO_ID,

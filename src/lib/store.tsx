@@ -88,7 +88,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           } catch {
             /* ignora */
           }
-          await supabase.from(TABELA).upsert({
+          await tabela().upsert({
             codigo: CODIGO_ACESSO,
             dados: atual as unknown as Json,
             atualizado_por: SESSAO_ID,

@@ -5,12 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 3px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-2xl: calc(var(--radius) + 10px);
+  --radius-3xl: calc(var(--radius) + 16px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -41,45 +41,51 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-on-accent: var(--on-accent);
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Manrope", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --shadow-soft: 0 1px 2px oklch(0.2439 0.0271 153.01 / 0.04), 0 8px 24px oklch(0.2439 0.0271 153.01 / 0.06);
-  --shadow-lift: 0 4px 10px oklch(0.2439 0.0271 153.01 / 0.06), 0 18px 40px oklch(0.2439 0.0271 153.01 / 0.12);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.28), 0 10px 28px oklch(0 0 0 / 0.32);
+  --shadow-lift: 0 6px 16px oklch(0 0 0 / 0.32), 0 24px 48px oklch(0 0 0 / 0.4);
+  --shadow-glow: 0 0 0 1px oklch(0.8964 0.2159 126.0 / 0.3), 0 8px 24px oklch(0.8964 0.2159 126.0 / 0.22);
 }
 
+/* MULTICAP — tema escuro "verde-noturno" com destaque neon-lima,
+   inspirado em apps financeiros modernos (dashboards escuros, cartões
+   elevados, acento vibrante único). */
 :root {
-  --radius: 1rem;
-  --background: oklch(0.9537 0.0111 123.46);
-  --foreground: oklch(0.2439 0.0271 153.01);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2439 0.0271 153.01);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2439 0.0271 153.01);
-  --primary: oklch(0.6177 0.1408 157.55);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.9659 0.0098 125.68);
-  --secondary-foreground: oklch(0.2439 0.0271 153.01);
-  --muted: oklch(0.9659 0.0098 125.68);
-  --muted-foreground: oklch(0.6108 0.034 131.76);
-  --accent: oklch(0.6177 0.1408 157.55 / 0.12);
-  --accent-foreground: oklch(0.6177 0.1408 157.55);
-  --destructive: oklch(0.6377 0.1755 27.62);
-  --destructive-foreground: oklch(1 0 0);
-  --info: oklch(0.6128 0.1869 260.94);
-  --warning: oklch(0.7444 0.132 78.57);
-  --surface: oklch(0.9659 0.0098 125.68);
-  --border: oklch(0.9269 0.0169 125.3);
-  --input: oklch(0.9269 0.0169 125.3);
-  --ring: oklch(0.6177 0.1408 157.55);
-  --chart-1: oklch(0.6177 0.1408 157.55);
-  --chart-2: oklch(0.6128 0.1869 260.94);
-  --chart-3: oklch(0.7444 0.132 78.57);
-  --chart-4: oklch(0.6377 0.1755 27.62);
-  --chart-5: oklch(0.6108 0.034 131.76);
-  --rosa: #f4c6d4;
-  --pessoa-a: #c9d9b8;
-  --pessoa-b: #f4c6d4;
+  --radius: 1.25rem;
+  --background: oklch(0.19 0.028 142);
+  --foreground: oklch(0.965 0.012 118);
+  --card: oklch(0.235 0.032 138);
+  --card-foreground: oklch(0.965 0.012 118);
+  --popover: oklch(0.225 0.032 138);
+  --popover-foreground: oklch(0.965 0.012 118);
+  --primary: oklch(0.8964 0.2159 126);
+  --primary-foreground: oklch(0.16 0.02 140);
+  --secondary: oklch(0.29 0.03 138);
+  --secondary-foreground: oklch(0.965 0.012 118);
+  --muted: oklch(0.275 0.03 138);
+  --muted-foreground: oklch(0.665 0.035 122);
+  --accent: oklch(0.8964 0.2159 126 / 0.16);
+  --accent-foreground: oklch(0.8964 0.2159 126);
+  --destructive: oklch(0.6559 0.2101 25.8);
+  --destructive-foreground: oklch(0.98 0.005 100);
+  --info: oklch(0.716 0.132 244.6);
+  --warning: oklch(0.822 0.152 84.6);
+  --surface: oklch(0.275 0.03 138);
+  --border: oklch(0.335 0.032 136 / 0.75);
+  --input: oklch(0.29 0.03 138);
+  --ring: oklch(0.8964 0.2159 126);
+  --chart-1: oklch(0.8964 0.2159 126);
+  --chart-2: oklch(0.716 0.132 244.6);
+  --chart-3: oklch(0.822 0.152 84.6);
+  --chart-4: oklch(0.6559 0.2101 25.8);
+  --chart-5: oklch(0.665 0.035 122);
+  --rosa: oklch(0.78 0.09 358);
+  --pessoa-a: oklch(0.8964 0.2159 126);
+  --pessoa-b: oklch(0.78 0.09 358);
+  --on-accent: oklch(0.99 0.004 100);
 }
 
 @layer base {
@@ -89,14 +95,18 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
   }
 
   body {
     background-color: var(--color-background);
+    background-image:
+      radial-gradient(1100px 480px at 12% -8%, oklch(0.8964 0.2159 126 / 0.09), transparent 60%),
+      radial-gradient(900px 460px at 100% 0%, oklch(0.29 0.06 138 / 0.5), transparent 55%);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.005em;
   }
 
   h1,
@@ -112,12 +122,23 @@
   select,
   button,
   textarea {
-    text-transform: uppercase;
     font-family: inherit;
   }
 
-  input::placeholder {
-    text-transform: uppercase;
+  ::selection {
+    background: oklch(0.8964 0.2159 126 / 0.3);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 999px;
   }
 }
 
@@ -133,13 +154,15 @@
   box-shadow: var(--shadow-soft);
   transition:
     transform 200ms ease,
-    box-shadow 200ms ease;
+    box-shadow 200ms ease,
+    border-color 200ms ease;
 }
 
 @utility panel-hover {
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lift);
+    border-color: oklch(0.8964 0.2159 126 / 0.35);
   }
 }
 
@@ -148,25 +171,35 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 0.6rem 0.75rem;
-  font-size: 0.8rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
   color: var(--color-foreground);
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  &::placeholder {
+    color: var(--color-muted-foreground);
+    font-weight: 500;
+  }
   &:focus {
     border-color: var(--color-primary);
+    background-color: var(--color-card);
     box-shadow: 0 0 0 3px var(--color-accent);
   }
 }
 
 @utility label-xs {
   display: block;
-  font-size: 0.65rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--color-muted-foreground);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+
+@utility glow {
+  box-shadow: var(--shadow-glow);
 }
 
 @keyframes section-in {
@@ -181,5 +214,5 @@
 }
 
 @utility animate-section {
-  animation: section-in 260ms ease-out both;
+  animation: section-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }

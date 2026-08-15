@@ -45,47 +45,46 @@
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Manrope", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.28), 0 10px 28px oklch(0 0 0 / 0.32);
-  --shadow-lift: 0 6px 16px oklch(0 0 0 / 0.32), 0 24px 48px oklch(0 0 0 / 0.4);
-  --shadow-glow: 0 0 0 1px oklch(0.8964 0.2159 126.0 / 0.3), 0 8px 24px oklch(0.8964 0.2159 126.0 / 0.22);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.5), 0 10px 28px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 6px 16px rgb(0 0 0 / 0.5), 0 24px 48px rgb(0 0 0 / 0.55);
+  --shadow-glow: 0 0 0 1px rgb(232 80 2 / 0.35), 0 8px 24px rgb(232 80 2 / 0.28);
 }
 
-/* MULTICAP — tema escuro "verde-noturno" com destaque neon-lima,
-   inspirado em apps financeiros modernos (dashboards escuros, cartões
-   elevados, acento vibrante único). */
+/* MULTICAP — tema escuro com a paleta de branding oficial
+   (preto/laranja), inspirado em apps financeiros modernos. */
 :root {
   --radius: 1.25rem;
-  --background: oklch(0.19 0.028 142);
-  --foreground: oklch(0.965 0.012 118);
-  --card: oklch(0.235 0.032 138);
-  --card-foreground: oklch(0.965 0.012 118);
-  --popover: oklch(0.225 0.032 138);
-  --popover-foreground: oklch(0.965 0.012 118);
-  --primary: oklch(0.8964 0.2159 126);
-  --primary-foreground: oklch(0.16 0.02 140);
-  --secondary: oklch(0.29 0.03 138);
-  --secondary-foreground: oklch(0.965 0.012 118);
-  --muted: oklch(0.275 0.03 138);
-  --muted-foreground: oklch(0.665 0.035 122);
-  --accent: oklch(0.8964 0.2159 126 / 0.16);
-  --accent-foreground: oklch(0.8964 0.2159 126);
-  --destructive: oklch(0.6559 0.2101 25.8);
-  --destructive-foreground: oklch(0.98 0.005 100);
-  --info: oklch(0.716 0.132 244.6);
-  --warning: oklch(0.822 0.152 84.6);
-  --surface: oklch(0.275 0.03 138);
-  --border: oklch(0.335 0.032 136 / 0.75);
-  --input: oklch(0.29 0.03 138);
-  --ring: oklch(0.8964 0.2159 126);
-  --chart-1: oklch(0.8964 0.2159 126);
-  --chart-2: oklch(0.716 0.132 244.6);
-  --chart-3: oklch(0.822 0.152 84.6);
-  --chart-4: oklch(0.6559 0.2101 25.8);
-  --chart-5: oklch(0.665 0.035 122);
-  --rosa: oklch(0.78 0.09 358);
-  --pessoa-a: oklch(0.8964 0.2159 126);
-  --pessoa-b: oklch(0.78 0.09 358);
-  --on-accent: oklch(0.99 0.004 100);
+  --background: #000000;
+  --foreground: #f9f9f9;
+  --card: #262626;
+  --card-foreground: #f9f9f9;
+  --popover: #262626;
+  --popover-foreground: #f9f9f9;
+  --primary: #e85002;
+  --primary-foreground: #f9f9f9;
+  --secondary: #333333;
+  --secondary-foreground: #f9f9f9;
+  --muted: #333333;
+  --muted-foreground: #a7a7a7;
+  --accent: rgb(232 80 2 / 0.16);
+  --accent-foreground: #e85002;
+  --destructive: #c10801;
+  --destructive-foreground: #f9f9f9;
+  --info: #f16001;
+  --warning: #f16001;
+  --surface: #1a1a1a;
+  --border: rgb(167 167 167 / 0.16);
+  --input: #1a1a1a;
+  --ring: #e85002;
+  --chart-1: #e85002;
+  --chart-2: #d9c3ab;
+  --chart-3: #f16001;
+  --chart-4: #c10801;
+  --chart-5: #a7a7a7;
+  --rosa: #d9c3ab;
+  --pessoa-a: #e85002;
+  --pessoa-b: #d9c3ab;
+  --on-accent: #f9f9f9;
 }
 
 @layer base {
@@ -101,12 +100,18 @@
   body {
     background-color: var(--color-background);
     background-image:
-      radial-gradient(1100px 480px at 12% -8%, oklch(0.8964 0.2159 126 / 0.09), transparent 60%),
-      radial-gradient(900px 460px at 100% 0%, oklch(0.29 0.06 138 / 0.5), transparent 55%);
+      radial-gradient(1100px 480px at 12% -8%, rgb(232 80 2 / 0.14), transparent 60%),
+      radial-gradient(900px 460px at 100% 0%, rgb(193 8 1 / 0.16), transparent 55%);
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    letter-spacing: 0.005em;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  input,
+  textarea {
+    text-transform: none;
   }
 
   h1,
@@ -126,7 +131,7 @@
   }
 
   ::selection {
-    background: oklch(0.8964 0.2159 126 / 0.3);
+    background: rgb(232 80 2 / 0.35);
   }
 
   ::-webkit-scrollbar {
@@ -162,7 +167,7 @@
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lift);
-    border-color: oklch(0.8964 0.2159 126 / 0.35);
+    border-color: rgb(232 80 2 / 0.4);
   }
 }
 

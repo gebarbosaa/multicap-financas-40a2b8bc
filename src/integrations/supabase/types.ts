@@ -14,7 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      multicap_dados: {
+        Row: {
+          codigo: string
+          dados: Json
+          atualizado_por: string | null
+          atualizado_em: string
+        }
+        Insert: {
+          codigo: string
+          dados?: Json
+          atualizado_por?: string | null
+          atualizado_em?: string
+        }
+        Update: {
+          codigo?: string
+          dados?: Json
+          atualizado_por?: string | null
+          atualizado_em?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -8,17 +8,15 @@ import {
   type ReactNode,
 } from "react";
 import { dadosIniciais, type AppData } from "./finance";
-import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
+import { carregarDados, salvarDados } from "./multicap.functions";
 import { CODIGO_ACESSO } from "@/components/PortaAcesso";
 
 const KEY = "multicap:data:v1";
-const TABELA = "multicap_dados";
 
-
-// Identifica esta aba/aparelho para não "ecoar" a própria escrita quando o
-// tempo real avisa que a linha mudou.
+// Identifica esta aba/aparelho para não "ecoar" a própria escrita quando
+// buscamos novidades feitas em outro aparelho.
 const SESSAO_ID = Math.random().toString(36).slice(2);
+
 
 interface Ctx {
   data: AppData;

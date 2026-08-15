@@ -113,7 +113,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSincronizando(true);
       try {
         await salvarDados({
-          data: { codigo: CODIGO_ACESSO, dados, sessao: SESSAO_ID },
+          data: { codigo: CODIGO_ACESSO, dados: data, sessao: SESSAO_ID },
         });
         setErroSincronizacao(false);
       } catch {

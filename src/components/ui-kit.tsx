@@ -56,11 +56,11 @@ export function Btn({
   title?: string;
 }) {
   const variants: Record<BtnVariant, string> = {
-    primary: "bg-primary text-primary-foreground hover:brightness-105",
-    info: "bg-info text-primary-foreground hover:brightness-105",
+    primary: "bg-primary text-primary-foreground shadow-glow hover:brightness-105",
+    info: "bg-info text-on-accent hover:brightness-105",
     danger: "bg-destructive text-destructive-foreground hover:brightness-105",
-    soft: "bg-surface text-foreground border border-border hover:border-primary",
-    ghost: "text-muted-foreground hover:text-foreground",
+    soft: "bg-secondary text-foreground border border-border hover:border-primary/60 hover:text-primary",
+    ghost: "text-muted-foreground hover:text-foreground hover:bg-surface",
   };
   return (
     <button
@@ -69,7 +69,7 @@ export function Btn({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold tracking-wide transition-all duration-200 active:scale-[0.97] disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold tracking-wide transition-all duration-200 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100",
         variants[variant],
         className,
       )}
@@ -119,7 +119,7 @@ export function Modal({
   if (!aberto) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <div
@@ -206,20 +206,20 @@ export function SeletorMes({
   proximo: () => void;
 }) {
   return (
-    <div className="mb-5 inline-flex items-center gap-2 rounded-xl border border-border bg-card p-1.5 shadow-soft">
+    <div className="mb-5 inline-flex items-center gap-1 rounded-full border border-border bg-card p-1.5 shadow-soft">
       <button
         onClick={anterior}
-        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-surface hover:text-primary"
+        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-surface hover:text-primary"
         aria-label="Mês anterior"
       >
         <ChevronLeft size={16} />
       </button>
-      <span className="num min-w-40 text-center text-xs font-bold tracking-widest">
-        {MESES[mes]?.toUpperCase()} {ano}
+      <span className="num min-w-36 text-center text-xs font-bold tracking-wide">
+        {MESES[mes]} {ano}
       </span>
       <button
         onClick={proximo}
-        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-surface hover:text-primary"
+        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-surface hover:text-primary"
         aria-label="Próximo mês"
       >
         <ChevronRight size={16} />

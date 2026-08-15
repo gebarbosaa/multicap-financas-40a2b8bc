@@ -54,12 +54,12 @@ export default function PortaAcesso({ children }: { children: ReactNode }) {
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 -top-24 size-[420px] rounded-full blur-3xl"
-        style={{ background: "oklch(0.8964 0.2159 126 / 0.16)" }}
+        style={{ background: "rgb(232 80 2 / 0.2)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-32 -right-16 size-[380px] rounded-full blur-3xl"
-        style={{ background: "oklch(0.716 0.132 244.6 / 0.12)" }}
+        style={{ background: "rgb(193 8 1 / 0.16)" }}
       />
 
       <div className="relative w-full max-w-sm">

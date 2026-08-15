@@ -47,7 +47,7 @@ export default function LancamentoForm({
       descricao: "",
       valor: 0,
       categoria: data.config.categorias[0] ?? "Outros",
-      formaPagamento: data.config.formasPagamento[0] ?? "Débito",
+      formaPagamento: data.config.formasPagamento[0]?.nome ?? "Débito",
       responsavel: resps[0] ?? "Conjunta",
     },
   );
@@ -102,8 +102,10 @@ export default function LancamentoForm({
           value={form.formaPagamento}
           onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })}
         >
-          {data.config.formasPagamento.map((c) => (
-            <option key={c}>{c}</option>
+          {data.config.formasPagamento.map((f) => (
+            <option key={f.id} value={f.nome}>
+              {f.nome}
+            </option>
           ))}
         </select>
       </Campo>

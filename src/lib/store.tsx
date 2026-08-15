@@ -15,10 +15,6 @@ import { CODIGO_ACESSO } from "@/components/PortaAcesso";
 const KEY = "multicap:data:v1";
 const TABELA = "multicap_dados";
 
-// A tabela é criada pela migration do Supabase; enquanto os tipos gerados não
-// a incluem, usamos este helper para manter o código compilável sem perder a
-// tipagem de runtime.
-const tabela = () => (supabase as any).from(TABELA);
 
 // Identifica esta aba/aparelho para não "ecoar" a própria escrita quando o
 // tempo real avisa que a linha mudou.

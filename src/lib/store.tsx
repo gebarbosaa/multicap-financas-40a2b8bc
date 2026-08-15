@@ -8,17 +8,15 @@ import {
   type ReactNode,
 } from "react";
 import { dadosIniciais, type AppData } from "./finance";
-import { supabase } from "@/integrations/supabase/client";
-import type { Json } from "@/integrations/supabase/types";
+import { carregarDados, salvarDados } from "./multicap.functions";
 import { CODIGO_ACESSO } from "@/components/PortaAcesso";
 
 const KEY = "multicap:data:v1";
-const TABELA = "multicap_dados";
 
-
-// Identifica esta aba/aparelho para não "ecoar" a própria escrita quando o
-// tempo real avisa que a linha mudou.
+// Identifica esta aba/aparelho para não "ecoar" a própria escrita quando
+// buscamos novidades feitas em outro aparelho.
 const SESSAO_ID = Math.random().toString(36).slice(2);
+
 
 interface Ctx {
   data: AppData;
@@ -53,8 +51,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const carregouRemoto = useRef(false);
 
   // 1) Carrega rápido do que já está salvo neste aparelho, e em seguida busca
-  // a versão mais atual no Supabase (é ela que vale, pois pode ter sido
-  // editada em outro aparelho).
+  // a versão mais atual na nuvem (é ela que vale, pois pode ter sido editada
+  // em outro aparelho). O servidor confere o código do domicílio.
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(KEY);
@@ -65,16 +63,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const { data: linha, error } = await supabase
-          .from(TABELA)
-          .select("dados")
-          .eq("codigo", CODIGO_ACESSO)
-          .maybeSingle();
+        const remoto = await carregarDados({ data: { codigo: CODIGO_ACESSO } });
 
-        if (error) throw error;
-
-        if (linha?.dados) {
-          setDataState(merge(linha.dados));
+        if (remoto?.dados) {
+          setDataState(merge(remoto.dados));
         } else {
           // Primeira vez que este código sincroniza: envia o que já existir
           // localmente (ou os dados iniciais) para criar o registro remoto.
@@ -85,16 +77,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           } catch {
             /* ignora */
           }
-          await supabase.from(TABELA).upsert({
-            codigo: CODIGO_ACESSO,
-            dados: atual as unknown as Json,
-            atualizado_por: SESSAO_ID,
+          await salvarDados({
+            data: { codigo: CODIGO_ACESSO, dados: atual, sessao: SESSAO_ID },
           });
         }
         setErroSincronizacao(false);
       } catch {
-        // Sem conexão, ou a tabela/migration ainda não foi criada no Supabase:
-        // o app continua funcionando só com os dados deste aparelho.
+        // Sem conexão: o app continua funcionando só com os dados deste aparelho.
         setErroSincronizacao(true);
       } finally {
         carregouRemoto.current = true;
@@ -114,7 +103,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [data, pronto]);
 
-  // 3) Envia para o Supabase (com um pequeno atraso para agrupar edições
+  // 3) Envia para a nuvem (com um pequeno atraso para agrupar edições
   // rápidas em seguida, tipo digitar em um campo).
   useEffect(() => {
     if (!pronto || !carregouRemoto.current) return;
@@ -123,12 +112,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     salvarTimeout.current = setTimeout(async () => {
       setSincronizando(true);
       try {
-        const { error } = await supabase.from(TABELA).upsert({
-          codigo: CODIGO_ACESSO,
-          dados: data as unknown as Json,
-          atualizado_por: SESSAO_ID,
+        await salvarDados({
+          data: { codigo: CODIGO_ACESSO, dados: data, sessao: SESSAO_ID },
         });
-        if (error) throw error;
         setErroSincronizacao(false);
       } catch {
         setErroSincronizacao(true);
@@ -142,31 +128,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [data, pronto]);
 
-  // 4) Escuta mudanças feitas em outro aparelho e atualiza a tela na hora.
+  // 4) De tempos em tempos busca mudanças feitas em outro aparelho.
   useEffect(() => {
-    const canal = supabase
-      .channel(`multicap-dados-${CODIGO_ACESSO}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: TABELA,
-          filter: `codigo=eq.${CODIGO_ACESSO}`,
-        },
-        (payload) => {
-          const novo = payload.new as { dados?: AppData; atualizado_por?: string } | null;
-          if (!novo?.dados) return;
-          if (novo.atualizado_por === SESSAO_ID) return; // é a própria escrita voltando, ignora
-          setDataState(merge(novo.dados));
-        },
-      )
-      .subscribe();
+    if (!pronto) return;
+    const timer = setInterval(async () => {
+      if (salvarTimeout.current) return; // há edição local pendente, não sobrescreve
+      try {
+        const remoto = await carregarDados({ data: { codigo: CODIGO_ACESSO } });
+        if (remoto?.dados && remoto.atualizado_por !== SESSAO_ID) {
+          setDataState(merge(remoto.dados));
+        }
+      } catch {
+        /* ignora */
+      }
+    }, 20000);
 
-    return () => {
-      supabase.removeChannel(canal);
-    };
-  }, []);
+    return () => clearInterval(timer);
+  }, [pronto]);
+
 
   const value = useMemo<Ctx>(
     () => ({

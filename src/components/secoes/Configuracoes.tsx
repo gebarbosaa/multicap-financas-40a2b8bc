@@ -1,37 +1,11 @@
 import { useRef, useState } from "react";
 import { Download, LogOut, Plus, Upload, X } from "lucide-react";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import {
-  Btn,
-  Campo,
-  Modal,
-  Panel,
-  SeletorMes,
-  Titulo,
-  useConfirm,
-  useMes,
-} from "@/components/ui-kit";
+import { Btn, Campo, Modal, Panel, SeletorMes, Titulo, useConfirm, useMes } from "@/components/ui-kit";
 import Orcamento from "@/components/secoes/Orcamento";
 import { useStore } from "@/lib/store";
 import { encerrarSessao } from "@/components/PortaAcesso";
-import {
-  MESES,
-  brl,
-  chaveMes,
-  dataBR,
-  fixoAtivo,
-  lancamentosDoMes,
-  posicaoParcela,
-  totaisDoMes,
-  uid,
-  valorParcela,
-  type AppData,
-  type FormaPagamento,
-  type Lancamento,
-  type TipoFormaPagamento,
-} from "@/lib/finance";
+import { chaveMes, dataBR, uid, type AppData, type Lancamento } from "@/lib/finance";
 
 function baixar(nome: string, conteudo: BlobPart, tipo: string) {
   const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
@@ -63,10 +37,7 @@ function Chips({
             className="inline-flex items-center gap-1.5 rounded-lg bg-surface px-3 py-1.5 text-[11px] font-bold"
           >
             {i}
-            <button
-              onClick={() => onRemove(i)}
-              className="text-muted-foreground hover:text-destructive"
-            >
+            <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive">
               <X size={13} />
             </button>
           </span>
@@ -84,75 +55,6 @@ function Chips({
             if (!txt.trim()) return;
             onAdd(txt.trim());
             setTxt("");
-          }}
-        >
-          <Plus size={15} />
-        </Btn>
-      </div>
-    </Panel>
-  );
-}
-
-const TIPOS_FORMA: TipoFormaPagamento[] = ["Débito", "PIX", "Crédito"];
-
-function PainelFormasPagamento({
-  itens,
-  onAdd,
-  onRemove,
-}: {
-  itens: FormaPagamento[];
-  onAdd: (nome: string, tipo: TipoFormaPagamento) => void;
-  onRemove: (id: string) => void;
-}) {
-  const [nome, setNome] = useState("");
-  const [tipo, setTipo] = useState<TipoFormaPagamento>("Débito");
-
-  return (
-    <Panel titulo="Formas de pagamento" className="lg:col-span-2">
-      <p className="mb-3 text-[11px] font-semibold text-muted-foreground">
-        Contas de débito e PIX entram direto no lançamento à vista. Só as marcadas como{" "}
-        <b className="text-foreground">Crédito</b> aparecem no menu Faturas.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {itens.map((f) => (
-          <span
-            key={f.id}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-surface px-3 py-1.5 text-[11px] font-bold"
-          >
-            {f.nome}
-            <span className="rounded bg-accent px-1.5 py-0.5 text-[9px] font-bold text-accent-foreground">
-              {f.tipo}
-            </span>
-            <button
-              onClick={() => onRemove(f.id)}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <X size={13} />
-            </button>
-          </span>
-        ))}
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-        <input
-          className="field"
-          placeholder='Nome (ex: "Nubank Gold", "Chave PIX Principal")'
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-        />
-        <select
-          className="field"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoFormaPagamento)}
-        >
-          {TIPOS_FORMA.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-        <Btn
-          onClick={() => {
-            if (!nome.trim()) return;
-            onAdd(nome.trim(), tipo);
-            setNome("");
           }}
         >
           <Plus size={15} />
@@ -226,11 +128,7 @@ export default function Configuracoes() {
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.json_to_sheet(
-        data.metas.map((x) => ({
-          Nome: x.nome,
-          "Valor Atual": x.valorAtual,
-          "Valor Alvo": x.valorAlvo,
-        })),
+        data.metas.map((x) => ({ Nome: x.nome, "Valor Atual": x.valorAtual, "Valor Alvo": x.valorAlvo })),
       ),
       "Metas",
     );
@@ -248,134 +146,22 @@ export default function Configuracoes() {
       "Investimentos",
     );
     const out = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
-    baixar(
-      "multicap.xlsx",
-      out,
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
+    baixar("multicap.xlsx", out, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   };
 
   const exportarCsv = () => {
-    const doMes = lancamentosDoMes(data.lancamentos, m.mes, m.ano);
     const linhas = [
-      "Data;Descrição;Valor;Categoria;Forma de Pagamento;Responsável;Status",
-      ...doMes.map((l) =>
-        [
-          dataBR(l.data),
-          l.descricao,
-          String(l.valor).replace(".", ","),
-          l.categoria,
-          l.formaPagamento,
-          l.responsavel,
-          "Pago",
-        ].join(";"),
+      "Data;Descrição;Valor;Categoria;Forma de Pagamento;Responsável",
+      ...data.lancamentos.map((l) =>
+        [l.data, l.descricao, String(l.valor), l.categoria, l.formaPagamento, l.responsavel].join(";"),
       ),
     ];
-    baixar(
-      `multicap-lancamentos-${MESES[m.mes]}-${m.ano}.csv`,
-      "\uFEFF" + linhas.join("\n"),
-      "text/csv;charset=utf-8",
-    );
-  };
-
-  const exportarPdf = () => {
-    const doc = new jsPDF();
-    const laranja: [number, number, number] = [232, 80, 2];
-    const preto: [number, number, number] = [0, 0, 0];
-
-    doc.setFillColor(...preto);
-    doc.rect(0, 0, 210, 32, "F");
-    doc.setTextColor(...laranja);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("MULTICAP", 14, 16);
-    doc.setTextColor(249, 249, 249);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Resumo financeiro · ${MESES[m.mes]} de ${m.ano}`, 14, 24);
-
-    const doMes = lancamentosDoMes(data.lancamentos, m.mes, m.ano);
-    const parcelas = data.parcelados
-      .map((p) => ({ p, pos: posicaoParcela(p, m.mes, m.ano) }))
-      .filter((x) => x.pos > 0);
-    const fixos = data.custosFixos.filter((c) => fixoAtivo(c, m.mes));
-    const totais = totaisDoMes(data, m.mes, m.ano);
-
-    autoTable(doc, {
-      startY: 38,
-      head: [["Resumo do mês", "Valor"]],
-      body: [
-        ["Lançamentos à vista", brl(totais.aVista)],
-        ["Parcelas vigentes", brl(totais.parcelados)],
-        ["Custos fixos e assinaturas", brl(totais.fixos)],
-        ["Total do mês", brl(totais.total)],
-      ],
-      headStyles: { fillColor: preto, textColor: laranja },
-      bodyStyles: { textColor: 20 },
-      alternateRowStyles: { fillColor: [249, 249, 249] },
-      margin: { left: 14, right: 14 },
-    });
-
-    const proxY =
-      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
-
-    autoTable(doc, {
-      startY: proxY,
-      head: [["Data", "Descrição", "Categoria", "Forma", "Valor"]],
-      body: doMes.map((l) => [
-        dataBR(l.data),
-        l.descricao,
-        l.categoria,
-        l.formaPagamento,
-        brl(l.valor),
-      ]),
-      headStyles: { fillColor: preto, textColor: laranja },
-      styles: { fontSize: 8 },
-      margin: { left: 14, right: 14 },
-    });
-
-    if (parcelas.length > 0) {
-      autoTable(doc, {
-        startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8,
-        head: [["Parcelado", "Parcela", "Categoria", "Valor"]],
-        body: parcelas.map(({ p, pos }) => [
-          p.descricao,
-          `${pos}/${p.numeroParcelas}`,
-          p.categoria,
-          brl(valorParcela(p)),
-        ]),
-        headStyles: { fillColor: preto, textColor: laranja },
-        styles: { fontSize: 8 },
-        margin: { left: 14, right: 14 },
-      });
-    }
-
-    if (fixos.length > 0) {
-      autoTable(doc, {
-        startY: (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8,
-        head: [["Custo fixo / assinatura", "Dia", "Categoria", "Valor"]],
-        body: fixos.map((c) => [
-          c.descricao + (c.assinatura ? " (assinatura)" : ""),
-          String(c.diaVencimento).padStart(2, "0"),
-          c.categoria,
-          brl(c.valor),
-        ]),
-        headStyles: { fillColor: preto, textColor: laranja },
-        styles: { fontSize: 8 },
-        margin: { left: 14, right: 14 },
-      });
-    }
-
-    doc.save(`multicap-relatorio-${MESES[m.mes]}-${m.ano}.pdf`);
+    baixar("multicap-lancamentos.csv", "\uFEFF" + linhas.join("\n"), "text/csv;charset=utf-8");
   };
 
   const importarCsv = async (file: File) => {
     const txt = await file.text();
-    const linhas = txt
-      .replace(/^\uFEFF/, "")
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .slice(1);
+    const linhas = txt.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean).slice(1);
     const novos: Lancamento[] = linhas.map((linha) => {
       const c = linha.split(linha.includes(";") ? ";" : ",");
       return {
@@ -463,15 +249,12 @@ export default function Configuracoes() {
           onAdd={(v) => setConfig({ categorias: [...data.config.categorias, v] })}
           onRemove={(v) => setConfig({ categorias: data.config.categorias.filter((x) => x !== v) })}
         />
-        <PainelFormasPagamento
+        <Chips
+          titulo="Formas de pagamento"
           itens={data.config.formasPagamento}
-          onAdd={(nome, tipo) =>
-            setConfig({
-              formasPagamento: [...data.config.formasPagamento, { id: uid(), nome, tipo }],
-            })
-          }
-          onRemove={(id) =>
-            setConfig({ formasPagamento: data.config.formasPagamento.filter((x) => x.id !== id) })
+          onAdd={(v) => setConfig({ formasPagamento: [...data.config.formasPagamento, v] })}
+          onRemove={(v) =>
+            setConfig({ formasPagamento: data.config.formasPagamento.filter((x) => x !== v) })
           }
         />
         <Chips
@@ -489,10 +272,7 @@ export default function Configuracoes() {
               <Download size={15} /> Exportar Excel
             </Btn>
             <Btn variant="soft" onClick={exportarCsv}>
-              <Download size={15} /> Exportar CSV (mês)
-            </Btn>
-            <Btn variant="soft" onClick={exportarPdf}>
-              <Download size={15} /> Relatório PDF (mês)
+              <Download size={15} /> Exportar CSV
             </Btn>
             <Btn
               variant="soft"

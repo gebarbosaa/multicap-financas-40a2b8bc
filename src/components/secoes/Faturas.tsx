@@ -17,7 +17,7 @@ export default function Faturas() {
   const { data } = useStore();
   const m = useMes();
   const cartoes = data.config.formasPagamento.filter(ehCartao);
-  const [forma, setForma] = useState(cartoes[0]?.nome ?? "Cartão de Crédito");
+  const [forma, setForma] = useState(cartoes[0] ?? "Cartão de Crédito");
 
   const aVista = lancamentosDoMes(data.lancamentos, m.mes, m.ano).filter(
     (l) => l.formaPagamento === forma,
@@ -36,9 +36,7 @@ export default function Faturas() {
 
   return (
     <div className="animate-section">
-      <Titulo
-        sub={`Somente cartão de crédito · fechamento no dia ${String(fechamento).padStart(2, "0")}`}
-      >
+      <Titulo sub={`Somente cartão de crédito · fechamento no dia ${String(fechamento).padStart(2, "0")}`}>
         Faturas
       </Titulo>
       <SeletorMes {...m} />
@@ -46,19 +44,11 @@ export default function Faturas() {
       <div className="mb-4 grid gap-4 sm:grid-cols-2">
         <div className="panel p-4">
           <p className="label-xs">Cartão de crédito</p>
-          {cartoes.length === 0 ? (
-            <p className="mt-1 text-[11px] font-semibold text-muted-foreground">
-              Nenhuma forma de pagamento do tipo Crédito cadastrada em Configurações.
-            </p>
-          ) : (
-            <select className="field" value={forma} onChange={(e) => setForma(e.target.value)}>
-              {cartoes.map((f) => (
-                <option key={f.id} value={f.nome}>
-                  {f.nome}
-                </option>
-              ))}
-            </select>
-          )}
+          <select className="field" value={forma} onChange={(e) => setForma(e.target.value)}>
+            {cartoes.map((f) => (
+              <option key={f}>{f}</option>
+            ))}
+          </select>
         </div>
         <div className="panel p-4">
           <p className="label-xs">Total da fatura</p>
@@ -103,8 +93,7 @@ export default function Faturas() {
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold">{p.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
-                      Parcela {pos}/{p.numeroParcelas} · {p.categoria} ·{" "}
-                      <EtiquetaResp nome={p.responsavel} />
+                      Parcela {pos}/{p.numeroParcelas} · {p.categoria} · <EtiquetaResp nome={p.responsavel} />
                     </p>
                   </div>
                   <span className="num text-xs font-bold">{brl(valorParcela(p))}</span>
@@ -128,7 +117,7 @@ export default function Faturas() {
                     <p className="truncate text-xs font-bold">{c.descricao}</p>
                     <p className="num text-[10px] font-semibold text-muted-foreground">
                       Vence dia {String(c.diaVencimento).padStart(2, "0")} · {c.categoria} ·{" "}
-                      <EtiquetaResp nome={c.responsavel} />
+<EtiquetaResp nome={c.responsavel} />
                     </p>
                   </div>
                   <span className="num text-xs font-bold">{brl(c.valor)}</span>

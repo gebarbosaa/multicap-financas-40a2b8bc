@@ -114,11 +114,7 @@ export default function VisaoGeral() {
                 <span className="flex items-center gap-3">
                   <span className="num text-xs font-bold">{brl(custo.valor)}</span>
                   <span className="rounded-md bg-warning px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
-                    {faltam === 0
-                      ? "Vence hoje"
-                      : faltam === 1
-                        ? "Vence amanhã"
-                        : `Em ${faltam} dias`}
+                    {faltam === 0 ? "Vence hoje" : faltam === 1 ? "Vence amanhã" : `Em ${faltam} dias`}
                   </span>
                 </span>
               </li>
@@ -145,11 +141,7 @@ export default function VisaoGeral() {
                     <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis
-                  dataKey="mes"
-                  tick={{ fontSize: 10 }}
-                  stroke="var(--color-muted-foreground)"
-                />
+                <XAxis dataKey="mes" tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" />
                 <YAxis tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" width={60} />
                 <Tooltip {...tooltipStyle} />
                 <Area
@@ -232,11 +224,7 @@ export default function VisaoGeral() {
                   valor: resp[n] ?? 0,
                 }))}
               >
-                <XAxis
-                  dataKey="nome"
-                  tick={{ fontSize: 10 }}
-                  stroke="var(--color-muted-foreground)"
-                />
+                <XAxis dataKey="nome" tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" />
                 <YAxis tick={{ fontSize: 10 }} stroke="var(--color-muted-foreground)" width={60} />
                 <Tooltip {...tooltipStyle} cursor={{ fill: "var(--color-surface)" }} />
                 <Bar dataKey="valor" radius={[8, 8, 0, 0]}>

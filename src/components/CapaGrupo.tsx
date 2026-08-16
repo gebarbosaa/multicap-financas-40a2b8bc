@@ -60,14 +60,14 @@ export default function CapaGrupo() {
       ) : (
         <div className="size-full bg-surface" />
       )}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/85 via-black/45 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-foreground/80 via-foreground/40 to-transparent" />
 
       <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
         <div className="min-w-0">
-          <p className="truncate font-display text-lg font-bold text-white min-[900px]:text-2xl">
+          <p className="truncate font-display text-lg font-bold text-background min-[900px]:text-2xl">
             {nome}
           </p>
-          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold text-white/80">
+          <p className="inline-flex items-center gap-1.5 text-[10px] font-bold text-background/80">
             <Users size={12} /> 2 pessoas
           </p>
         </div>

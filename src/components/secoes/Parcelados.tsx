@@ -14,16 +14,7 @@ import {
   useMes,
 } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
-import {
-  brl,
-  dataBR,
-  hojeISO,
-  num,
-  posicaoParcela,
-  uid,
-  valorParcela,
-  type Parcelado,
-} from "@/lib/finance";
+import { brl, dataBR, hojeISO, num, posicaoParcela, uid, valorParcela, type Parcelado } from "@/lib/finance";
 
 export default function Parcelados() {
   const { data, setData } = useStore();
@@ -39,7 +30,7 @@ export default function Parcelados() {
     valorTotal: 0,
     numeroParcelas: 1,
     categoria: data.config.categorias[0] ?? "Outros",
-    formaPagamento: data.config.formasPagamento[0]?.nome ?? "Cartão de Crédito",
+    formaPagamento: data.config.formasPagamento[0] ?? "Cartão de Crédito",
     responsavel: resps[0] ?? "Conjunta",
   });
 
@@ -206,10 +197,8 @@ export default function Parcelados() {
               value={form.formaPagamento}
               onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })}
             >
-              {data.config.formasPagamento.map((f) => (
-                <option key={f.id} value={f.nome}>
-                  {f.nome}
-                </option>
+              {data.config.formasPagamento.map((c) => (
+                <option key={c}>{c}</option>
               ))}
             </select>
           </Campo>

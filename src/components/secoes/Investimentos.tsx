@@ -93,9 +93,7 @@ export default function Investimentos() {
                   <div className="flex items-center gap-2">
                     <span
                       className="num text-sm font-bold"
-                      style={{
-                        color: dif >= 0 ? "var(--color-primary)" : "var(--color-destructive)",
-                      }}
+                      style={{ color: dif >= 0 ? "var(--color-primary)" : "var(--color-destructive)" }}
                     >
                       {brl(dif)} ({pct.toFixed(1)}%)
                     </span>

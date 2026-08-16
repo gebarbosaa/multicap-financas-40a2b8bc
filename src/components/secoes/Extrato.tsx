@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
-import {
-  Btn,
-  Modal,
-  Panel,
-  SeletorMes,
-  Titulo,
-  Vazio,
-  useConfirm,
-  useMes,
-} from "@/components/ui-kit";
+import { Btn, Modal, Panel, SeletorMes, Titulo, Vazio, useConfirm, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
 import {
   brl,
@@ -155,9 +146,7 @@ export default function Extrato() {
                     <>
                       <button
                         className="rounded-md p-1.5 text-muted-foreground transition-colors hover:text-info"
-                        onClick={() =>
-                          i.lancamento && setModal({ aberto: true, item: i.lancamento })
-                        }
+                        onClick={() => i.lancamento && setModal({ aberto: true, item: i.lancamento })}
                         aria-label="Editar"
                       >
                         <Pencil size={15} />
@@ -168,7 +157,9 @@ export default function Extrato() {
                           confirmar(`Excluir "${i.descricao}"?`, () =>
                             setData((d) => ({
                               ...d,
-                              lancamentos: d.lancamentos.filter((x) => x.id !== i.lancamento?.id),
+                              lancamentos: d.lancamentos.filter(
+                                (x) => x.id !== i.lancamento?.id,
+                              ),
                             })),
                           )
                         }

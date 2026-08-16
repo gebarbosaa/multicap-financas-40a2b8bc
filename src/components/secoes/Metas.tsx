@@ -73,10 +73,7 @@ export default function Metas({ embutido }: { embutido?: boolean } = {}) {
                       className="p-1.5 text-muted-foreground hover:text-destructive"
                       onClick={() =>
                         confirmar(`Excluir "${meta.nome}"?`, () =>
-                          setData((d) => ({
-                            ...d,
-                            metas: d.metas.filter((x) => x.id !== meta.id),
-                          })),
+                          setData((d) => ({ ...d, metas: d.metas.filter((x) => x.id !== meta.id) })),
                         )
                       }
                       aria-label="Excluir"

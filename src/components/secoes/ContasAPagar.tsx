@@ -47,9 +47,7 @@ function Linha({
             <AlertTriangle size={11} /> Vencida
           </span>
         )}
-        <span className={`num text-sm font-bold ${pago ? "line-through" : ""}`}>
-          {brl(c.valor)}
-        </span>
+        <span className={`num text-sm font-bold ${pago ? "line-through" : ""}`}>{brl(c.valor)}</span>
       </div>
     </li>
   );

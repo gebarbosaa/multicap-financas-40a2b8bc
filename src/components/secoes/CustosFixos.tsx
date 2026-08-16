@@ -16,7 +16,7 @@ export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
     descricao: "",
     valor: 0,
     categoria: data.config.categorias[0] ?? "Outros",
-    formaPagamento: data.config.formasPagamento[0]?.nome ?? "Débito",
+    formaPagamento: data.config.formasPagamento[0] ?? "Débito",
     diaVencimento: 5,
     mesesAtivos: Array.from({ length: 12 }, (_, i) => i),
     responsavel: resps[0] ?? "Conjunta",
@@ -43,14 +43,11 @@ export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
     setModal({ aberto: false });
   };
 
-  const total = data.custosFixos.filter((c) => !c.assinatura).reduce((s, c) => s + c.valor, 0);
-  const fixosVisiveis = data.custosFixos.filter((c) => !c.assinatura);
+  const total = data.custosFixos.reduce((s, c) => s + c.valor, 0);
 
   return (
     <div className="animate-section">
-      {!embutido && (
-        <Titulo sub="Despesas recorrentes mensais (aluguel, internet, etc.)">Custos Fixos</Titulo>
-      )}
+      {!embutido && <Titulo sub="Despesas recorrentes mensais">Custos Fixos</Titulo>}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="panel px-4 py-3">
@@ -62,12 +59,12 @@ export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
         </Btn>
       </div>
 
-      <Panel titulo={`Cadastrados (${fixosVisiveis.length})`}>
-        {fixosVisiveis.length === 0 ? (
+      <Panel titulo={`Cadastrados (${data.custosFixos.length})`}>
+        {data.custosFixos.length === 0 ? (
           <Vazio>Nenhum custo fixo cadastrado</Vazio>
         ) : (
           <ul className="space-y-2">
-            {fixosVisiveis.map((c) => (
+            {data.custosFixos.map((c) => (
               <li key={c.id} className="rounded-lg bg-surface px-3 py-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
@@ -160,10 +157,8 @@ export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
               value={form.formaPagamento}
               onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })}
             >
-              {data.config.formasPagamento.map((f) => (
-                <option key={f.id} value={f.nome}>
-                  {f.nome}
-                </option>
+              {data.config.formasPagamento.map((c) => (
+                <option key={c}>{c}</option>
               ))}
             </select>
           </Campo>
@@ -175,10 +170,7 @@ export default function CustosFixos({ embutido }: { embutido?: boolean } = {}) {
               max={31}
               value={form.diaVencimento}
               onChange={(e) =>
-                setForm({
-                  ...form,
-                  diaVencimento: Math.min(31, Math.max(1, Number(e.target.value))),
-                })
+                setForm({ ...form, diaVencimento: Math.min(31, Math.max(1, Number(e.target.value))) })
               }
             />
           </Campo>

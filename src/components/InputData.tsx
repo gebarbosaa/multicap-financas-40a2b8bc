@@ -68,10 +68,9 @@ export default function InputData({
   const hoje = new Date();
   const ehHoje = (d: number) =>
     hoje.getDate() === d && hoje.getMonth() === mes && hoje.getFullYear() === ano;
-  const selDia =
-    value && value.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`)
-      ? Number(value.split("-")[2])
-      : 0;
+  const selDia = value && value.startsWith(`${ano}-${String(mes + 1).padStart(2, "0")}`)
+    ? Number(value.split("-")[2])
+    : 0;
 
   const escolher = (d: number) => {
     onChange(`${ano}-${String(mes + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);

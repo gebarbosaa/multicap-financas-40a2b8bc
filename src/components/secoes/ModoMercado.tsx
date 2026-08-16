@@ -34,9 +34,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
             key={l.id}
             onClick={() => setAtivaId(l.id)}
             className={`rounded-lg px-4 py-2.5 text-xs font-bold transition-colors ${
-              l.id === lista?.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border"
+              l.id === lista?.id ? "bg-primary text-primary-foreground" : "bg-card border border-border"
             }`}
           >
             {l.nome}
@@ -77,9 +75,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
                     </span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="num text-sm font-bold text-primary">
-                      {brl(subtotalItem(i))}
-                    </span>
+                    <span className="num text-sm font-bold text-primary">{brl(subtotalItem(i))}</span>
                     <button
                       className="p-1.5 text-muted-foreground hover:text-destructive"
                       onClick={() =>
@@ -102,9 +98,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
                         variant="soft"
                         className="px-4 py-3"
                         onClick={() =>
-                          patch(i.id, {
-                            quantidade: Math.max(0, +((i.quantidade ?? 0) - 1).toFixed(2)),
-                          })
+                          patch(i.id, { quantidade: Math.max(0, +((i.quantidade ?? 0) - 1).toFixed(2)) })
                         }
                       >
                         <Minus size={16} />
@@ -120,9 +114,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
                       <Btn
                         variant="soft"
                         className="px-4 py-3"
-                        onClick={() =>
-                          patch(i.id, { quantidade: +((i.quantidade ?? 0) + 1).toFixed(2) })
-                        }
+                        onClick={() => patch(i.id, { quantidade: +((i.quantidade ?? 0) + 1).toFixed(2) })}
                       >
                         <Plus size={16} />
                       </Btn>
@@ -139,10 +131,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
                       value={i.preco ?? ""}
                       onChange={(e) =>
                         patch(i.id, {
-                          preco:
-                            e.target.value === ""
-                              ? null
-                              : Number(e.target.value.replace(",", ".")) || 0,
+                          preco: e.target.value === "" ? null : Number(e.target.value.replace(",", ".")) || 0,
                         })
                       }
                     />
@@ -155,9 +144,7 @@ export default function ModoMercado({ embutido }: { embutido?: boolean } = {}) {
                           key={u}
                           onClick={() => patch(i.id, { unidade: u as UnidadeCompra })}
                           className={`rounded-lg px-3 py-2 text-[11px] font-bold transition-colors ${
-                            u === i.unidade
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-card border border-border"
+                            u === i.unidade ? "bg-primary text-primary-foreground" : "bg-card border border-border"
                           }`}
                         >
                           {u}

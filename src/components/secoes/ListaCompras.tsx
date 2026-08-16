@@ -121,10 +121,7 @@ export default function ListaCompras({ embutido }: { embutido?: boolean } = {}) 
           </Campo>
           <Campo label="Quantidade">
             <div className="flex items-center gap-2">
-              <Btn
-                variant="soft"
-                onClick={() => setQuantidade((q) => Math.max(0, +(q - 1).toFixed(2)))}
-              >
+              <Btn variant="soft" onClick={() => setQuantidade((q) => Math.max(0, +(q - 1).toFixed(2)))}>
                 <Minus size={14} />
               </Btn>
               <input

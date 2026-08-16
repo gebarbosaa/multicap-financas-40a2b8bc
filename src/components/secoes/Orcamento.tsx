@@ -32,12 +32,7 @@ export default function Orcamento({ embutido }: { embutido?: boolean } = {}) {
           <p className="label-xs">Gasto total</p>
           <p
             className="num text-lg font-bold"
-            style={{
-              color:
-                totalGasto > totalTeto && totalTeto > 0
-                  ? "var(--color-destructive)"
-                  : "var(--color-primary)",
-            }}
+            style={{ color: totalGasto > totalTeto && totalTeto > 0 ? "var(--color-destructive)" : "var(--color-primary)" }}
           >
             {brl(totalGasto)}
           </p>
@@ -80,11 +75,7 @@ export default function Orcamento({ embutido }: { embutido?: boolean } = {}) {
                 {teto > 0 && (
                   <p
                     className="num mt-1 text-[10px] font-bold"
-                    style={{
-                      color: estourou
-                        ? "var(--color-destructive)"
-                        : "var(--color-muted-foreground)",
-                    }}
+                    style={{ color: estourou ? "var(--color-destructive)" : "var(--color-muted-foreground)" }}
                   >
                     {pct.toFixed(0)}% {estourou ? `· Estourou ${brl(gasto - teto)}` : ""}
                   </p>

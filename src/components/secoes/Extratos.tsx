@@ -1,528 +1,100 @@
-import React, { useState } from "react";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  CreditCard,
-  Search,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Trash2,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useStore } from "@/lib/store";
-import { Lancamento, dataBR, ehCartao, hojeISO, MESES } from "@/lib/finance";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../integrations/supabase/client';
+import { formatCurrency } from '../../lib/finance';
+import { Trash2, ArrowUpRight, ArrowDownLeft, FileSpreadsheet } from 'lucide-react';
 
-function Extrato() {
-  const { data, setData } = useStore();
+export function Extratos() {
+  const [extratos, setExtratos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Controle do Mês Selecionado (Ano/Mês atual)
-  const hoje = new Date();
-  const [ano, setAno] = useState(hoje.getFullYear());
-  const [mes, setMes] = useState(hoje.getMonth()); // 0 a 11
+  const carregarExtratos = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-  const [busca, setBusca] = useState("");
-  const [filtroTipo, setFiltroTipo] = useState<"todos" | "entrada" | "saida" | "cartao">("todos");
-  const [itemSelecionado, setItemSelecionado] = useState<Lancamento | null>(null);
-  const [modalNovoAberto, setModalNovoAberto] = useState(false);
+    setLoading(true);
+    // Buscando lançamentos ou faturas/registros para consolidar o extrato
+    const { data, error } = await supabase
+      .from('faturas')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-  // Estados do formulário de novo lançamento
-  const [descricao, setDescricao] = useState("");
-  const [valorInput, setValorInput] = useState("");
-  const [tipo, setTipo] = useState<"entrada" | "saida">("saida");
-  const [categoria, setCategoria] = useState(data.config.categorias[0] || "Moradia");
-  const [responsavel, setResponsavel] = useState<string>(data.config.pessoaA);
-  const [formaPagamento, setFormaPagamento] = useState<string>(
-    data.config.formasPagamento[0] || "Pix",
-  );
-
-  const formatarValorMoeda = (val: string) => {
-    const cleanDigits = val.replace(/\D/g, "");
-    if (!cleanDigits) return "R$ 0,00";
-    const numberValue = parseFloat(cleanDigits) / 100;
-    return numberValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  };
-
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValorInput(formatarValorMoeda(e.target.value));
-  };
-
-  const handleSalvar = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanDigits = valorInput.replace(/\D/g, "");
-    const valorNumerico = parseFloat(cleanDigits) / 100;
-    if (!descricao || valorNumerico <= 0) return;
-
-    const novoItem: Lancamento = {
-      id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
-      data: hojeISO(),
-      descricao: descricao.toUpperCase(),
-      valor: valorNumerico,
-      tipo, // "entrada" ou "saida"
-      categoria: categoria.toUpperCase(),
-      responsavel,
-      formaPagamento,
-    };
-
-    setData((estadoAtual) => ({
-      ...estadoAtual,
-      lancamentos: [novoItem, ...(estadoAtual.lancamentos || [])],
-    }));
-
-    setModalNovoAberto(false);
-    setDescricao("");
-    setValorInput("");
-    setTipo("saida");
-  };
-
-  const deletarLancamento = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setData((estadoAtual) => ({
-      ...estadoAtual,
-      lancamentos: (estadoAtual.lancamentos || []).filter((item) => item.id !== id),
-    }));
-  };
-
-  // Filtrar lançamentos do mês selecionado e de acordo com a busca/tipo
-  const lancamentosDoMesEAno = (data.lancamentos || []).filter((item) => {
-    if (!item.data) return false;
-    const [y, m] = item.data.split("-").map(Number);
-    return y === ano && (m ?? 0) - 1 === mes;
-  });
-
-  const lancamentosFiltrados = lancamentosDoMesEAno.filter((item) => {
-    const atendeBusca =
-      item.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-      item.categoria.toLowerCase().includes(busca.toLowerCase());
-    const itemTipo = item.tipo || "saida";
-    const cartao = ehCartao(item.formaPagamento);
-    const atendeFiltro =
-      filtroTipo === "todos" ||
-      (filtroTipo === "entrada" && itemTipo === "entrada") ||
-      (filtroTipo === "saida" && itemTipo === "saida" && !cartao) ||
-      (filtroTipo === "cartao" && itemTipo === "saida" && cartao);
-    return atendeBusca && atendeFiltro;
-  });
-
-  const totalMes = lancamentosDoMesEAno.reduce((acc, item) => {
-    const itemTipo = item.tipo || "saida";
-    if (itemTipo === "entrada") return acc + item.valor;
-    return acc - item.valor;
-  }, 0);
-
-  const mesAnterior = () => {
-    if (mes === 0) {
-      setMes(11);
-      setAno(ano - 1);
-    } else {
-      setMes(mes - 1);
+    if (!error && data) {
+      setExtratos(data);
     }
+    setLoading(false);
   };
 
-  const mesProximo = () => {
-    if (mes === 11) {
-      setMes(0);
-      setAno(ano + 1);
-    } else {
-      setMes(mes + 1);
-    }
+  useEffect(() => {
+    carregarExtratos();
+  }, []);
+
+  const excluirRegistro = async (id: string) => {
+    await supabase.from('faturas').delete().eq('id', id);
+    carregarExtratos();
   };
 
   return (
-    <div className="space-y-6 p-6 text-white max-w-6xl mx-auto pb-24">
-      {/* Cabeçalho */}
-      <div className="flex justify-between items-start">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black tracking-wider uppercase">Extrato</h1>
-          <p className="text-xs text-neutral-400 font-medium mt-0.5">
-            TODOS OS LANÇAMENTOS DO MÊS, EM TODAS AS FORMAS DE PAGAMENTO
-          </p>
-        </div>
-
-        <button
-          onClick={() => setModalNovoAberto(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg transition-all shadow-orange-500/20"
-        >
-          <Plus className="w-4 h-4" /> Novo lançamento
-        </button>
-      </div>
-
-      {/* Seletor de Mês e Total */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-800 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm">
-          <button onClick={mesAnterior} className="hover:text-orange-500 transition-colors">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <span className="uppercase tracking-wider px-2">
-            {MESES[mes]} {ano}
-          </span>
-          <button onClick={mesProximo} className="hover:text-orange-500 transition-colors">
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="bg-neutral-900 border border-neutral-800 px-5 py-2.5 rounded-xl shadow-inner">
-          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
-            Total do Mês
-          </p>
-          <p
-            className={`text-2xl font-black font-mono ${totalMes >= 0 ? "text-emerald-400" : "text-orange-500"}`}
-          >
-            R${" "}
-            {totalMes.toLocaleString("pt-BR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
+          <h2 className="text-2xl font-bold text-white">Extrato Consolidado</h2>
+          <p className="text-sm text-gray-400 mt-1">Histórico completo de lançamentos e movimentações.</p>
         </div>
       </div>
 
-      {/* Barra de Busca e Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-center pt-2">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
-          <Input
-            placeholder="Buscar por descrição ou categoria..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 bg-neutral-900 border-neutral-800 text-white text-xs h-10 rounded-xl focus:border-orange-500"
-          />
-        </div>
-
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1">
-          <button
-            onClick={() => setFiltroTipo("todos")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-              filtroTipo === "todos"
-                ? "bg-orange-500 text-white"
-                : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFiltroTipo("entrada")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-              filtroTipo === "entrada"
-                ? "bg-emerald-600 text-white"
-                : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-            }`}
-          >
-            🟢 Entradas / Receitas
-          </button>
-          <button
-            onClick={() => setFiltroTipo("saida")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-              filtroTipo === "saida"
-                ? "bg-orange-600 text-white"
-                : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-            }`}
-          >
-            🔴 Saídas
-          </button>
-          <button
-            onClick={() => setFiltroTipo("cartao")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-              filtroTipo === "cartao"
-                ? "bg-sky-600 text-white"
-                : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
-            }`}
-          >
-            🔵 Cartão
-          </button>
-        </div>
+      {/* Tabela de Extrato */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-gray-800 text-xs text-gray-400 bg-gray-950/50">
+              <th className="p-4">Tipo</th>
+              <th className="p-4">Descrição</th>
+              <th className="p-4">Data</th>
+              <th className="p-4">Valor</th>
+              <th className="p-4 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-800 text-sm">
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-500">Carregando extrato...</td>
+              </tr>
+            ) : extratos.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-500">Nenhum registro encontrado no extrato.</td>
+              </tr>
+            ) : (
+              extratos.map((item) => (
+                <tr key={item.id} className="hover:bg-gray-800/50">
+                  <td className="p-4">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-800 text-gray-300">
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-blue-400" />
+                      Lançamento
+                    </span>
+                  </td>
+                  <td className="p-4 font-medium text-white">{item.descricao}</td>
+                  <td className="p-4 text-gray-400">
+                    {item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-'}
+                  </td>
+                  <td className="p-4 text-white font-medium">
+                    {formatCurrency(item.valor)}
+                  </td>
+                  <td className="p-4 text-right">
+                    <button
+                      onClick={() => excluirRegistro(item.id)}
+                      className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                      title="Excluir registro"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-
-      {/* Lista de Movimentações */}
-      <div>
-        <h3 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-3">
-          Movimentações ({lancamentosFiltrados.length})
-        </h3>
-
-        <div className="space-y-3">
-          {lancamentosFiltrados.length === 0 ? (
-            <div className="text-center py-12 bg-neutral-900/50 rounded-2xl border border-neutral-800">
-              <p className="text-neutral-400 text-xs">Nenhum lançamento encontrado neste mês.</p>
-            </div>
-          ) : (
-            lancamentosFiltrados.map((item) => {
-              const isEntrada = item.tipo === "entrada";
-              const isCartao = !isEntrada && ehCartao(item.formaPagamento);
-              const Icone = isEntrada ? ArrowUpRight : isCartao ? CreditCard : ArrowDownLeft;
-              const corIcone = isEntrada
-                ? "text-emerald-400"
-                : isCartao
-                  ? "text-sky-400"
-                  : "text-rose-400";
-              const bgIcone = isEntrada
-                ? "bg-emerald-500/10 border-emerald-500/20"
-                : isCartao
-                  ? "bg-sky-500/10 border-sky-500/20"
-                  : "bg-rose-500/10 border-rose-500/20";
-              return (
-                <Card
-                  key={item.id}
-                  onClick={() => setItemSelecionado(item)}
-                  className="bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 cursor-pointer transition-all rounded-2xl"
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3.5">
-                      <div
-                        className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${bgIcone}`}
-                      >
-                        <Icone className={`w-4.5 h-4.5 ${corIcone}`} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-extrabold text-sm uppercase text-neutral-100">
-                            {item.descricao}
-                          </span>
-                          <span className="bg-neutral-800 text-neutral-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
-                            {item.formaPagamento}
-                          </span>
-                        </div>
-
-                        <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-2 mt-1">
-                          <span>{dataBR(item.data)}</span>
-                          <span>•</span>
-                          <span>{isEntrada ? "RECEITA" : "LANÇAMENTO"}</span>
-                          <span>•</span>
-                          <span>{item.categoria}</span>
-                          <span>•</span>
-                          <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                            ● {item.responsavel}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className={`font-mono text-base font-extrabold ${corIcone}`}>
-                          {isEntrada ? "+ " : "- "}R${" "}
-                          {item.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 border-l border-neutral-800 pl-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setItemSelecionado(item);
-                          }}
-                          className="p-1.5 text-neutral-400 hover:text-white transition-colors"
-                          title="Detalhes"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => deletarLancamento(item.id, e)}
-                          className="p-1.5 text-neutral-400 hover:text-orange-500 transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Modal de Detalhes */}
-      <Dialog open={!!itemSelecionado} onOpenChange={() => setItemSelecionado(null)}>
-        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-black uppercase">
-              Detalhes da Transação
-            </DialogTitle>
-          </DialogHeader>
-
-          {itemSelecionado && (
-            <div className="space-y-3 pt-2 text-xs">
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Tipo:</span>
-                <span
-                  className={`font-bold uppercase ${
-                    itemSelecionado.tipo === "entrada"
-                      ? "text-emerald-400"
-                      : ehCartao(itemSelecionado.formaPagamento)
-                        ? "text-sky-400"
-                        : "text-rose-400"
-                  }`}
-                >
-                  {itemSelecionado.tipo === "entrada"
-                    ? "Receita / Entrada"
-                    : ehCartao(itemSelecionado.formaPagamento)
-                      ? "Cartão de Crédito"
-                      : "Saída"}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Descrição:</span>
-                <span className="font-bold text-neutral-100">{itemSelecionado.descricao}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Data:</span>
-                <span>{dataBR(itemSelecionado.data)}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Categoria:</span>
-                <span className="bg-neutral-800 px-2 py-0.5 rounded font-bold">
-                  {itemSelecionado.categoria}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Responsável:</span>
-                <span className="text-orange-400 font-bold">{itemSelecionado.responsavel}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Forma de Pagamento:</span>
-                <span>{itemSelecionado.formaPagamento}</span>
-              </div>
-
-              <div className="flex justify-between pt-2 text-sm font-black">
-                <span>Valor Registrado:</span>
-                <span className="font-mono text-white">
-                  R$ {itemSelecionado.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Novo Lançamento / Receita */}
-      <Dialog open={modalNovoAberto} onOpenChange={setModalNovoAberto}>
-        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-black uppercase">
-              Novo Lançamento ou Receita
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSalvar} className="space-y-4 pt-2">
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">
-                TIPO DE OPERAÇÃO
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTipo("entrada")}
-                  className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                    tipo === "entrada"
-                      ? "bg-emerald-600 border-emerald-500 text-white shadow-lg"
-                      : "bg-neutral-800 border-neutral-700 text-neutral-400"
-                  }`}
-                >
-                  🟢 Receita / Entrada
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipo("saida")}
-                  className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                    tipo === "saida"
-                      ? "bg-orange-600 border-orange-500 text-white shadow-lg"
-                      : "bg-neutral-800 border-neutral-700 text-neutral-400"
-                  }`}
-                >
-                  🔴 Saída
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">DESCRIÇÃO</label>
-              <Input
-                placeholder="Ex: Salário, Venda, Mercado, Luz"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                className="bg-neutral-800 border-neutral-700 text-white text-xs h-10 rounded-xl focus:border-orange-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">VALOR</label>
-              <Input
-                type="text"
-                placeholder="R$ 0,00"
-                value={valorInput}
-                onChange={handleValorChange}
-                className="bg-neutral-800 border-neutral-700 text-orange-400 font-mono text-base font-bold h-11 rounded-xl focus:border-orange-500"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-neutral-400 font-bold block mb-1">
-                  CATEGORIA
-                </label>
-                <select
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
-                >
-                  {data.config.categorias.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-[11px] text-neutral-400 font-bold block mb-1">
-                  RESPONSÁVEL
-                </label>
-                <select
-                  value={responsavel}
-                  onChange={(e) => setResponsavel(e.target.value)}
-                  className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
-                >
-                  <option value={data.config.pessoaA}>{data.config.pessoaA}</option>
-                  <option value={data.config.pessoaB}>{data.config.pessoaB}</option>
-                  <option value="Conjunta">Conjunta</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">
-                FORMA DE PAGAMENTO
-              </label>
-              <select
-                value={formaPagamento}
-                onChange={(e) => setFormaPagamento(e.target.value)}
-                className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
-              >
-                {data.config.formasPagamento.map((forma) => (
-                  <option key={forma} value={forma}>
-                    {forma}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition-all uppercase tracking-wider mt-3 shadow-md shadow-orange-500/20"
-            >
-              Salvar Lançamento
-            </button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-
-export default Extrato;
-export { Extrato };

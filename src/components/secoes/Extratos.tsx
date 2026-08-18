@@ -1,54 +1,28 @@
 import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Search, Plus, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-export interface Lancamento {
-  id: string;
-  data: string;
-  descricao: string;
-  valor: number;
-  tipo: 'entrada' | 'saida' | 'credito';
-  categoria: string;
-  responsavel: string;
-  formaPagamento: string;
-  banco?: string;
-  parcelado?: boolean;
-  numeroParcelas?: number;
-  valorTotal?: number;
-}
-
-const MOCK_LANCAMENTOS: Lancamento[] = [
-  {
-    id: "1",
-    data: "17/08/2026",
-    descricao: "MERCADO",
-    valor: 136.99,
-    tipo: "saida",
-    categoria: "MORADIA",
-    responsavel: "GEOVANNA",
-    formaPagamento: "DÉBITO",
-    banco: "NUBANK"
-  }
-];
+import { useStore } from "@/lib/store";
+import { Lancamento, dataBR, hojeISO } from "./finance";
 
 export function Extrato() {
-  const [lancamentos, setLancamentos] = useState<Lancamento[]>(MOCK_LANCAMENTOS);
+  const { data, setData } = useStore();
+  
+  const lancamentos = data.lancamentos || [];
+
   const [busca, setBusca] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'entrada' | 'saida' | 'credito'>('todos');
+  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [itemSelecionado, setItemSelecionado] = useState<Lancamento | null>(null);
   const [modalNovoAberto, setModalNovoAberto] = useState(false);
 
-  // Estados do formulário de novo lançamento
+  // Estados do formulário de novo lançamento alinhados ao finance.ts
   const [descricao, setDescricao] = useState('');
   const [valorInput, setValorInput] = useState('');
-  const [tipo, setTipo] = useState<'entrada' | 'saida' | 'credito'>('saida');
-  const [categoria, setCategoria] = useState('');
-  const [responsavel, setResponsavel] = useState('GEOVANNA');
-  const [banco, setBanco] = useState('NUBANK');
-  const [parcelado, setParcelado] = useState(false);
-  const [numeroParcelas, setNumeroParcelas] = useState(2);
+  const [tipo, setTipo] = useState<'entrada' | 'saida'>('saida');
+  const [categoria, setCategoria] = useState(data.config.categorias[0] || 'Moradia');
+  const [responsavel, setResponsavel] = useState<string>(data.config.pessoaA);
+  const [formaPagamento, setFormaPagamento] = useState<string>(data.config.formasPagamento[0] || 'Pix');
 
   const formatarValorMoeda = (val: string) => {
     const cleanDigits = val.replace(/\D/g, '');
@@ -68,32 +42,32 @@ export function Extrato() {
     if (!descricao || valorNumerico <= 0) return;
 
     const novoItem: Lancamento = {
-      id: Date.now().toString(),
-      data: new Date().toLocaleDateString('pt-BR'),
+      id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+      data: hojeISO(), // Salva no formato YYYY-MM-DD exigido pelo finance.ts
       descricao: descricao.toUpperCase(),
       valor: valorNumerico,
       tipo,
-      categoria: (categoria || 'GERAL').toUpperCase(),
-      responsavel: (responsavel || 'GEOVANNA').toUpperCase(),
-      formaPagamento: tipo === 'entrada' ? 'PIX' : tipo === 'saida' ? 'DÉBITO' : 'CARTÃO DE CRÉDITO',
-      banco: (banco || 'NUBANK').toUpperCase(),
-      parcelado: tipo === 'credito' && parcelado,
-      numeroParcelas: tipo === 'credito' && parcelado ? numeroParcelas : undefined,
-      valorTotal: tipo === 'credito' && parcelado ? valorNumerico * numeroParcelas : valorNumerico
+      categoria: categoria.toUpperCase(),
+      responsavel,
+      formaPagamento,
     };
 
-    setLancamentos([novoItem, ...lancamentos]);
+    setData(estadoAtual => ({
+      ...estadoAtual,
+      lancamentos: [novoItem, ...(estadoAtual.lancamentos || [])]
+    }));
+
     setModalNovoAberto(false);
     setDescricao('');
     setValorInput('');
-    setCategoria('');
-    setParcelado(false);
-    setNumeroParcelas(2);
   };
 
   const deletarLancamento = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setLancamentos(lancamentos.filter(item => item.id !== id));
+    setData(estadoAtual => ({
+      ...estadoAtual,
+      lancamentos: (estadoAtual.lancamentos || []).filter(item => item.id !== id)
+    }));
   };
 
   const lancamentosFiltrados = lancamentos.filter(item => {
@@ -115,7 +89,7 @@ export function Extrato() {
         <div>
           <h1 className="text-2xl font-black tracking-wider uppercase">Extrato</h1>
           <p className="text-xs text-neutral-400 font-medium mt-0.5">
-            TODOS OS LANÇAMENTOS DO MÊS, EM TODAS AS FORMAS DE PAGAMENTO
+            TODOS OS LANÇAMENTOS DO MÊS
           </p>
         </div>
 
@@ -131,14 +105,14 @@ export function Extrato() {
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-800 px-3 py-2 rounded-xl text-xs font-bold">
           <button className="hover:text-orange-500"><ChevronLeft className="w-4 h-4" /></button>
-          <span>AGOSTO 2026</span>
+          <span>MÊS ATUAL</span>
           <button className="hover:text-orange-500"><ChevronRight className="w-4 h-4" /></button>
         </div>
 
         <div className="bg-neutral-900 border border-neutral-800 px-5 py-2.5 rounded-xl shadow-inner">
           <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total do Mês</p>
-          <p className={`text-2xl font-black font-mono ${totalMes >= 0 ? 'text-orange-500' : 'text-rose-500'}`}>
-            R$ {Math.abs(totalMes).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          <p className={`text-2xl font-black font-mono ${totalMes >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+            R$ {totalMes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
       </div>
@@ -178,15 +152,7 @@ export function Extrato() {
               filtroTipo === 'saida' ? 'bg-rose-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
             }`}
           >
-            🔴 Débito
-          </button>
-          <button
-            onClick={() => setFiltroTipo('credito')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-              filtroTipo === 'credito' ? 'bg-sky-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-            }`}
-          >
-            🔵 Cartão
+            🔴 Saídas
           </button>
         </div>
       </div>
@@ -214,17 +180,13 @@ export function Extrato() {
                     <div>
                       <div className="flex items-center gap-2.5">
                         <span className="font-extrabold text-sm uppercase text-neutral-100">{item.descricao}</span>
-                        {item.banco && (
-                          <span className="bg-neutral-800 text-neutral-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
-                            {item.banco}
-                          </span>
-                        )}
+                        <span className="bg-neutral-800 text-neutral-400 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">
+                          {item.formaPagamento}
+                        </span>
                       </div>
 
                       <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-2 mt-1">
-                        <span>{item.data}</span>
-                        <span>•</span>
-                        <span>{item.formaPagamento}</span>
+                        <span>{dataBR(item.data)}</span>
                         <span>•</span>
                         <span>{item.categoria}</span>
                         <span>•</span>
@@ -237,21 +199,16 @@ export function Extrato() {
 
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <span className="font-mono text-base font-extrabold text-white">
-                        R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <span className={`font-mono text-base font-extrabold ${item.tipo === 'entrada' ? 'text-emerald-400' : 'text-white'}`}>
+                        {item.tipo === 'entrada' ? '+ ' : ''}R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
-                      {item.parcelado && item.numeroParcelas && (
-                        <p className="text-[11px] text-sky-400 font-mono font-bold">
-                          {item.numeroParcelas}x parcelado
-                        </p>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-1 border-l border-neutral-800 pl-3">
                       <button
                         onClick={(e) => { e.stopPropagation(); setItemSelecionado(item); }}
                         className="p-1.5 text-neutral-400 hover:text-white transition-colors"
-                        title="Editar"
+                        title="Detalhes"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -286,11 +243,7 @@ export function Extrato() {
               </div>
               <div className="flex justify-between border-b border-neutral-800 pb-2">
                 <span className="text-neutral-400">Data:</span>
-                <span>{itemSelecionado.data}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Banco / Instituição:</span>
-                <span className="bg-neutral-800 px-2 py-0.5 rounded font-bold">{itemSelecionado.banco}</span>
+                <span>{dataBR(itemSelecionado.data)}</span>
               </div>
               <div className="flex justify-between border-b border-neutral-800 pb-2">
                 <span className="text-neutral-400">Categoria:</span>
@@ -326,7 +279,7 @@ export function Extrato() {
           <form onSubmit={handleSalvar} className="space-y-4 pt-2">
             <div>
               <label className="text-[11px] text-neutral-400 font-bold block mb-1">TIPO DE OPERAÇÃO</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setTipo('entrada')}
@@ -343,16 +296,7 @@ export function Extrato() {
                     tipo === 'saida' ? 'bg-rose-600 border-rose-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
                   }`}
                 >
-                  🔴 Débito/PIX
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipo('credito')}
-                  className={`py-2.5 text-xs font-bold rounded-xl border ${
-                    tipo === 'credito' ? 'bg-sky-600 border-sky-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
-                  }`}
-                >
-                  🔵 Cartão
+                  🔴 Saída
                 </button>
               </div>
             </div>
@@ -382,33 +326,42 @@ export function Extrato() {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] text-neutral-400 font-bold block mb-1">BANCO</label>
-                <Input
-                  placeholder="Ex: Nubank, Itaú"
-                  value={banco}
-                  onChange={(e) => setBanco(e.target.value)}
-                  className="bg-neutral-800 border-neutral-700 text-white text-xs h-10 rounded-xl"
-                />
+                <label className="text-[11px] text-neutral-400 font-bold block mb-1">CATEGORIA</label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
+                >
+                  {data.config.categorias.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-[11px] text-neutral-400 font-bold block mb-1">RESPONSÁVEL</label>
-                <Input
-                  placeholder="Ex: Geovanna"
+                <select
                   value={responsavel}
                   onChange={(e) => setResponsavel(e.target.value)}
-                  className="bg-neutral-800 border-neutral-700 text-white text-xs h-10 rounded-xl"
-                />
+                  className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
+                >
+                  <option value={data.config.pessoaA}>{data.config.pessoaA}</option>
+                  <option value={data.config.pessoaB}>{data.config.pessoaB}</option>
+                  <option value="Conjunta">Conjunta</option>
+                </select>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">CATEGORIA</label>
-              <Input
-                placeholder="Ex: Moradia, Alimentação"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="bg-neutral-800 border-neutral-700 text-white text-xs h-10 rounded-xl"
-              />
+              <label className="text-[11px] text-neutral-400 font-bold block mb-1">FORMA DE PAGAMENTO</label>
+              <select
+                value={formaPagamento}
+                onChange={(e) => setFormaPagamento(e.target.value)}
+                className="w-full bg-neutral-800 border border-neutral-700 text-white text-xs h-10 rounded-xl px-3"
+              >
+                {data.config.formasPagamento.map(forma => (
+                  <option key={forma} value={forma}>{forma}</option>
+                ))}
+              </select>
             </div>
 
             <button

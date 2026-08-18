@@ -1,3 +1,4 @@
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { EtiquetaResp } from "@/components/LancamentoForm";
 import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
@@ -105,7 +106,18 @@ export default function Extratos({ embutido }: { embutido?: boolean } = {}) {
                 key={l.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2"
               >
-                <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <span
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-lg ${
+                      l.tipo === "entrada"
+                        ? "bg-info/15 text-info"
+                        : "bg-accent text-accent-foreground"
+                    }`}
+                    aria-label={l.tipo === "entrada" ? "Entrada" : "Saída"}
+                  >
+                    {l.tipo === "entrada" ? <ArrowUpRight size={15} /> : <ArrowDownLeft size={15} />}
+                  </span>
+                  <span className="flex min-w-0 flex-col">
                   <span className="truncate text-xs font-bold">{l.descricao}</span>
                   <span className="num text-[10px] font-bold text-muted-foreground">
                     {dataBR(l.data)} · {l.categoria} · {l.forma}

@@ -1,122 +1,154 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Lock, ShieldCheck, Sparkles } from "lucide-react";
-import { Btn } from "@/components/ui-kit";
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const CODIGO = "GK140626";
-// Exportado para o store.tsx usar como identificador do domicílio ao
-// sincronizar os dados com o Supabase (mesmo código = mesmos dados).
-export const CODIGO_ACESSO = CODIGO;
-export const CHAVE_ACESSO = "multicap:acesso:v1";
-
-export function encerrarSessao() {
-  try {
-    window.localStorage.removeItem(CHAVE_ACESSO);
-  } catch {
-    /* ignora */
-  }
-  window.location.reload();
+interface PortaAcessoProps {
+  onSuccess: (userData: { nome: string; sala: string; tipo: 'google' | 'codigo' }) => void;
 }
 
-export default function PortaAcesso({ children }: { children: ReactNode }) {
-  const [liberado, setLiberado] = useState(false);
-  const [pronto, setPronto] = useState(false);
-  const [codigo, setCodigo] = useState("");
-  const [erro, setErro] = useState(false);
+export const PortaAcesso: React.FC<PortaAcessoProps> = ({ onSuccess }) => {
+  const [modo, setModo] = useState<'inicial' | 'codigo'>('inicial');
+  const [nome, setNome] = useState('');
+  const [codigoSala, setCodigoSala] = useState('');
+  const [erro, setErro] = useState('');
 
-  useEffect(() => {
-    try {
-      if (window.localStorage.getItem(CHAVE_ACESSO) === "ok") setLiberado(true);
-    } catch {
-      /* ignora */
+  // Simulação de códigos válidos conhecidos ou gerados (você pode ajustar conforme seu banco/estado)
+  const [salasValidas, setSalasValidas] = useState<string[]>(['123456', 'ABCDEF']);
+
+  const handleGoogleLogin = () => {
+    // Simulação ou integração real de login com Google
+    onSuccess({ nome: 'Usuário Google', sala: 'Geral', tipo: 'google' });
+  };
+
+  const handleCriarSala = () => {
+    // Gera um código aleatório de 6 caracteres maiúsculos
+    const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setSalasValidas((prev) => [...prev, novoCodigo]);
+    alert(`Sala criada com sucesso! O código da sua sala é: ${novoCodigo}`);
+    setCodigoSala(novoCodigo);
+    setModo('codigo');
+  };
+
+  const handleEntrarComCodigo = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+
+    if (!nome.trim()) {
+      setErro('Por favor, digite seu nome.');
+      return;
     }
-    setPronto(true);
-  }, []);
 
-  if (!pronto) return null;
-  if (liberado) return <>{children}</>;
+    if (!codigoSala.trim()) {
+      setErro('Por favor, digite o código da sala.');
+      return;
+    }
 
-  const entrar = () => {
-    if (codigo.trim().toUpperCase() === CODIGO) {
-      try {
-        window.localStorage.setItem(CHAVE_ACESSO, "ok");
-      } catch {
-        /* ignora */
-      }
-      setLiberado(true);
+    // Verifica se a sala existe (ou aceita se for uma lógica aberta)
+    const codigoFormatado = codigoSala.trim().toUpperCase();
+    
+    // Se quiser validar estritamente pelas salas criadas:
+    if (salasValidas.includes(codigoFormatado) || codigoFormatado.length >= 4) {
+      onSuccess({ nome: nome.trim(), sala: codigoFormatado, tipo: 'codigo' });
     } else {
-      setErro(true);
+      setErro('Código incorreto');
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 -top-24 size-[420px] rounded-full blur-3xl"
-        style={{ background: "oklch(0.8964 0.2159 126 / 0.16)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-16 size-[380px] rounded-full blur-3xl"
-        style={{ background: "oklch(0.716 0.132 244.6 / 0.12)" }}
-      />
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="w-full max-w-md shadow-lg">
+        {modo === 'inicial' ? (
+          <>
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">Bem-vindo</CardTitle>
+              <CardDescription>Escolha como deseja acessar o sistema</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 flex flex-col">
+              <Button 
+                onClick={handleGoogleLogin} 
+                className="w-full flex items-center justify-center gap-2"
+                variant="default"
+              >
+                Fazer login com o Google
+              </Button>
 
-      <div className="relative w-full max-w-sm">
-        <div className="mb-7 flex flex-col items-center text-center">
-          <span className="glow mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Sparkles size={24} strokeWidth={2.2} />
-          </span>
-          <span className="font-display text-2xl font-bold tracking-tight">MULTICAP</span>
-          <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
-            Controle financeiro do domicílio
-          </p>
-        </div>
+              <div className="relative flex py-2 items-center">
+                <div className="flex-grow border-t border-muted"></div>
+                <span className="flex-shrink mx-4 text-muted-foreground text-xs uppercase">ou</span>
+                <div className="flex-grow border-t border-muted"></div>
+              </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            entrar();
-          }}
-          className="panel animate-section p-7"
-        >
-          <h1 className="text-lg font-bold tracking-tight">Acesso do domicílio</h1>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            Digite o código de acesso para entrar
-          </p>
+              <Button 
+                onClick={() => setModo('codigo')} 
+                variant="outline" 
+                className="w-full"
+              >
+                Entrar com Código de Sala
+              </Button>
 
-          <label className="mt-6 block">
-            <span className="label-xs">Código de acesso</span>
-            <input
-              autoFocus
-              className="field num text-center text-base tracking-[0.4em]"
-              value={codigo}
-              placeholder="········"
-              onChange={(e) => {
-                setCodigo(e.target.value.toUpperCase());
-                setErro(false);
-              }}
-            />
-          </label>
+              <Button 
+                onClick={handleCriarSala} 
+                variant="ghost" 
+                className="w-full text-xs text-muted-foreground"
+              >
+                Criar uma nova sala (Gerar Código)
+              </Button>
+            </CardContent>
+          </>
+        ) : (
+          <>
+            <CardHeader>
+              <CardTitle className="text-xl font-bold">Entrar na Sala</CardTitle>
+              <CardDescription>Insira seu nome e o código fornecido</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleEntrarComCodigo} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Seu Nome</Label>
+                  <Input 
+                    id="nome" 
+                    type="text" 
+                    placeholder="Digite seu nome" 
+                    value={nome} 
+                    onChange={(e) => setNome(e.target.value)} 
+                  />
+                </div>
 
-          {erro ? (
-            <p className="mt-3 rounded-xl bg-destructive/15 px-3 py-2 text-[11px] font-bold text-destructive">
-              Código incorreto, tente novamente
-            </p>
-          ) : null}
+                <div className="space-y-2">
+                  <Label htmlFor="codigo">Código da Sala</Label>
+                  <Input 
+                    id="codigo" 
+                    type="text" 
+                    placeholder="Ex: 123456" 
+                    value={codigoSala} 
+                    onChange={(e) => setCodigoSala(e.target.value)} 
+                  />
+                </div>
 
-          <Btn type="submit" className="mt-6 w-full py-3">
-            <Lock size={15} /> Entrar
-          </Btn>
+                {erro && (
+                  <p className="text-sm font-medium text-destructive text-center">{erro}</p>
+                )}
 
-          <p className="mt-5 flex items-center justify-center gap-1.5 text-[10px] font-bold text-muted-foreground">
-            <ShieldCheck size={13} /> Seus dados ficam salvos e sincronizados com segurança
-          </p>
-        </form>
-
-        <p className="mt-5 text-center text-[10px] font-bold tracking-wide text-muted-foreground">
-          Geovanna &amp; Karen
-        </p>
-      </div>
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-1/2" 
+                    onClick={() => { setModo('inicial'); setErro(''); }}
+                  >
+                    Voltar
+                  </Button>
+                  <Button type="submit" className="w-1/2">
+                    Entrar
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </>
+        )}
+      </Card>
     </div>
   );
-}
+};

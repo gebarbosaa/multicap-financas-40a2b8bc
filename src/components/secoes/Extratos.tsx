@@ -122,6 +122,7 @@ export default function Extratos({ embutido }: { embutido?: boolean } = {}) {
                   <span className="num text-[10px] font-bold text-muted-foreground">
                     {dataBR(l.data)} · {l.categoria} · {l.forma}
                     {l.marcador ? ` · ${l.marcador}` : ""}
+                    </span>
                   </span>
                 </span>
                 <span className="flex items-center gap-3">

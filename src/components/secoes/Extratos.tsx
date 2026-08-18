@@ -78,7 +78,7 @@ function Extrato() {
   const lancamentosDoMesEAno = (data.lancamentos || []).filter(item => {
     if (!item.data) return false;
     const [y, m] = item.data.split('-').map(Number);
-    return y === ano && (m - 1) === mes;
+    return y === ano && ((m ?? 0) - 1) === mes;
   });
 
   const lancamentosFiltrados = lancamentosDoMesEAno.filter(item => {

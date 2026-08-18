@@ -1,100 +1,132 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../integrations/supabase/client';
-import { formatCurrency } from '../../lib/finance';
-import { Trash2, FileSpreadsheet } from 'lucide-react';
+import { EtiquetaResp } from "@/components/LancamentoForm";
+import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
+import { useStore } from "@/lib/store";
+import {
+  brl,
+  dataBR,
+  fixoAtivo,
+  lancamentosDoMes,
+  posicaoParcela,
+  valorParcela,
+} from "@/lib/finance";
 
-export function Extratos() {
-  const [extratos, setExtratos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+type Linha = {
+  id: string;
+  data: string;
+  descricao: string;
+  categoria: string;
+  forma: string;
+  responsavel: string;
+  valor: number;
+  tipo: "entrada" | "saida";
+  marcador?: string;
+};
 
-  const carregarExtratos = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+export default function Extratos({ embutido }: { embutido?: boolean } = {}) {
+  const { data } = useStore();
+  const m = useMes();
+  const dia = (d: number) =>
+    `${m.ano}-${String(m.mes + 1).padStart(2, "0")}-${String(Math.min(Math.max(d, 1), 28)).padStart(2, "0")}`;
 
-    setLoading(true);
-    // Buscando lançamentos ou faturas/registros para consolidar o extrato
-    const { data, error } = await supabase
-      .from('faturas')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+  const linhas: Linha[] = [
+    ...lancamentosDoMes(data.lancamentos, m.mes, m.ano).map((l) => ({
+      id: l.id,
+      data: l.data,
+      descricao: l.descricao,
+      categoria: l.categoria,
+      forma: l.formaPagamento,
+      responsavel: l.responsavel,
+      valor: l.valor,
+      tipo: l.tipo ?? ("saida" as const),
+    })),
+    ...data.custosFixos
+      .filter((c) => fixoAtivo(c, m.mes))
+      .map((c) => ({
+        id: `fixo-${c.id}`,
+        data: dia(c.diaVencimento),
+        descricao: c.descricao,
+        categoria: c.categoria,
+        forma: c.formaPagamento,
+        responsavel: c.responsavel,
+        valor: c.valor,
+        tipo: "saida" as const,
+        marcador: "Fixo",
+      })),
+    ...data.parcelados
+      .map((p) => ({ p, pos: posicaoParcela(p, m.mes, m.ano) }))
+      .filter((x) => x.pos > 0)
+      .map(({ p, pos }) => ({
+        id: `parc-${p.id}-${pos}`,
+        data: p.dataCompra || dia(10),
+        descricao: p.descricao,
+        categoria: p.categoria,
+        forma: p.formaPagamento,
+        responsavel: p.responsavel,
+        valor: valorParcela(p, pos),
+        tipo: "saida" as const,
+        marcador: `Parcela ${pos} de ${p.numeroParcelas}`,
+      })),
+  ].sort((a, b) => b.data.localeCompare(a.data));
 
-    if (!error && data) {
-      setExtratos(data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    carregarExtratos();
-  }, []);
-
-  const excluirRegistro = async (id: string) => {
-    await supabase.from('faturas').delete().eq('id', id);
-    carregarExtratos();
-  };
+  const entradas = linhas.filter((l) => l.tipo === "entrada").reduce((s, l) => s + l.valor, 0);
+  const saidas = linhas.filter((l) => l.tipo === "saida").reduce((s, l) => s + l.valor, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Extrato Consolidado</h2>
-          <p className="text-sm text-neutral-400 mt-1">Histórico completo de lançamentos e movimentações.</p>
+    <div className="animate-section">
+      {!embutido && (
+        <>
+          <Titulo sub="Todos os lançamentos do mês, mais recentes primeiro">Extrato</Titulo>
+          <SeletorMes {...m} />
+        </>
+      )}
+
+      <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="panel p-4">
+          <p className="label-xs">Entradas</p>
+          <p className="num text-lg font-bold text-info">{brl(entradas)}</p>
+        </div>
+        <div className="panel p-4">
+          <p className="label-xs">Saídas</p>
+          <p className="num text-lg font-bold text-primary">{brl(saidas)}</p>
+        </div>
+        <div className="panel p-4">
+          <p className="label-xs">Saldo</p>
+          <p className="num text-lg font-bold">{brl(entradas - saidas)}</p>
         </div>
       </div>
 
-      {/* Tabela com fundo preto, bordas e detalhes em laranja/degradê */}
-      <div className="bg-black border border-neutral-800 rounded-xl overflow-hidden shadow-2xl">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-neutral-800 text-xs text-neutral-400 bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950">
-              <th className="p-4">Tipo</th>
-              <th className="p-4">Descrição</th>
-              <th className="p-4">Data</th>
-              <th className="p-4">Valor</th>
-              <th className="p-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-900 text-sm">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="p-6 text-center text-neutral-500">Carregando extrato...</td>
-              </tr>
-            ) : extratos.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-6 text-center text-neutral-500">Nenhum registro encontrado no extrato.</td>
-              </tr>
-            ) : (
-              extratos.map((item) => (
-                <tr key={item.id} className="hover:bg-neutral-900/40 transition-colors">
-                  <td className="p-4">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-neutral-900 text-orange-400 border border-orange-500/20">
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-orange-500" />
-                      Lançamento
-                    </span>
-                  </td>
-                  <td className="p-4 font-medium text-white">{item.descricao}</td>
-                  <td className="p-4 text-neutral-400">
-                    {item.created_at ? new Date(item.created_at).toLocaleDateString('pt-BR') : '-'}
-                  </td>
-                  <td className="p-4 font-bold bg-gradient-to-r from-orange-400 to-amber-500 bg-clip-text text-transparent">
-                    {formatCurrency(item.valor)}
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => excluirRegistro(item.id)}
-                      className="text-neutral-500 hover:text-orange-500 transition-colors p-1"
-                      title="Excluir registro"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Panel titulo="Movimentações">
+        {linhas.length === 0 ? (
+          <Vazio>Nenhuma movimentação neste mês</Vazio>
+        ) : (
+          <ul className="space-y-2">
+            {linhas.map((l) => (
+              <li
+                key={l.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2"
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-xs font-bold">{l.descricao}</span>
+                  <span className="num text-[10px] font-bold text-muted-foreground">
+                    {dataBR(l.data)} · {l.categoria} · {l.forma}
+                    {l.marcador ? ` · ${l.marcador}` : ""}
+                  </span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <EtiquetaResp nome={l.responsavel} />
+                  <span
+                    className="num text-xs font-bold"
+                    style={{ color: l.tipo === "entrada" ? "var(--color-info)" : undefined }}
+                  >
+                    {l.tipo === "entrada" ? "+" : "-"}
+                    {brl(l.valor)}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
     </div>
   );
 }

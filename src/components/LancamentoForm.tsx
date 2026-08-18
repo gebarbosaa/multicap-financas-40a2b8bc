@@ -65,28 +65,39 @@ export default function LancamentoForm({
     >
       <div className="sm:col-span-2">
         <span className="label-xs">Tipo de lançamento</span>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setForm({ ...form, tipo: "saida" })}
-            className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
-              form.tipo !== "entrada"
-                ? "border-primary bg-accent text-accent-foreground"
+            className={`rounded-lg border px-2 py-2 text-xs font-bold transition-colors ${
+              form.tipo === "saida"
+                ? "border-red-500/60 bg-red-500/15 text-red-400"
                 : "border-border text-muted-foreground"
             }`}
           >
-            Saída / Despesa
+            Saída
           </button>
           <button
             type="button"
             onClick={() => setForm({ ...form, tipo: "entrada" })}
-            className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+            className={`rounded-lg border px-2 py-2 text-xs font-bold transition-colors ${
               form.tipo === "entrada"
-                ? "border-primary bg-accent text-accent-foreground"
+                ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-400"
                 : "border-border text-muted-foreground"
             }`}
           >
-            Entrada / Receita
+            Entrada
+          </button>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, tipo: "transferencia" })}
+            className={`rounded-lg border px-2 py-2 text-xs font-bold transition-colors ${
+              form.tipo === "transferencia"
+                ? "border-blue-500/60 bg-blue-500/15 text-blue-400"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            Transferência
           </button>
         </div>
       </div>

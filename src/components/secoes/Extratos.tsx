@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowRightLeft, ArrowUpRight } from "lucide-react";
 import { EtiquetaResp } from "@/components/LancamentoForm";
 import { Panel, SeletorMes, Titulo, Vazio, useMes } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
@@ -9,6 +9,7 @@ import {
   lancamentosDoMes,
   posicaoParcela,
   valorParcela,
+  type TipoLancamento,
 } from "@/lib/finance";
 
 type Linha = {
@@ -19,7 +20,7 @@ type Linha = {
   forma: string;
   responsavel: string;
   valor: number;
-  tipo: "entrada" | "saida";
+  tipo: TipoLancamento;
   marcador?: string;
 };
 

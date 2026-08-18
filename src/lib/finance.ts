@@ -1,6 +1,6 @@
 export type Responsavel = string; // nome pessoa A/B ou "Conjunta"
 
-export type TipoLancamento = "entrada" | "saida";
+export type TipoLancamento = "entrada" | "saida" | "transferencia";
 
 export interface Lancamento {
   id: string;

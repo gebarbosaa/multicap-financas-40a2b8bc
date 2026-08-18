@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function Titulo({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
   return (
     <div className="mb-5">
-      <h1 className="text-2xl font-bold tracking-tight">{children}</h1>
+      <h1 className="grad-texto text-2xl font-bold tracking-tight">{children}</h1>
       {sub ? <p className="mt-1 text-xs font-semibold text-muted-foreground">{sub}</p> : null}
     </div>
   );
@@ -56,7 +56,7 @@ export function Btn({
   title?: string;
 }) {
   const variants: Record<BtnVariant, string> = {
-    primary: "bg-primary text-primary-foreground hover:brightness-105",
+    primary: "grad-fogo hover:brightness-110",
     info: "bg-info text-primary-foreground hover:brightness-105",
     danger: "bg-destructive text-destructive-foreground hover:brightness-105",
     soft: "bg-surface text-foreground border border-border hover:border-primary",

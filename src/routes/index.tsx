@@ -1,24 +1,21 @@
 import { Suspense, lazy, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
+  Banknote,
   CalendarDays,
   CloudOff,
-  CreditCard,
-  LayoutDashboard,
   ClipboardCheck,
+  LayoutDashboard,
   Loader2,
   LogOut,
   PiggyBank,
-  Receipt,
-  Repeat2,
   Settings,
   ShoppingCart,
   Sparkles,
   Wallet,
 } from "lucide-react";
 import { StoreProvider, useStore } from "@/lib/store";
-import PortaAcesso from "@/components/PortaAcesso";
-import { useAuth } from "@/lib/auth";
+import PortaAcesso, { encerrarSessao } from "@/components/PortaAcesso";
 import VisaoGeral from "@/components/secoes/VisaoGeral";
 
 // Módulos secundários carregados sob demanda (code splitting): só baixam o
@@ -27,9 +24,9 @@ import VisaoGeral from "@/components/secoes/VisaoGeral";
 const Calendario = lazy(() => import("@/components/secoes/Calendario"));
 const Extrato = lazy(() => import("@/components/secoes/Extrato"));
 const Contas = lazy(() => import("@/components/secoes/Contas"));
-const Parcelados = lazy(() => import("@/components/secoes/Parcelados"));
-const Faturas = lazy(() => import("@/components/secoes/Faturas"));
-const Assinaturas = lazy(() => import("@/components/secoes/Assinaturas"));
+// Finanças agrupa, em sub-abas, Custos Fixos, Parcelamentos, Cartão de
+// Crédito (faturas) e Orçamento Mensal.
+const Financas = lazy(() => import("@/components/secoes/Financas"));
 const Mercado = lazy(() => import("@/components/secoes/Mercado"));
 const InvestimentosMetas = lazy(() => import("@/components/secoes/InvestimentosMetas"));
 const Configuracoes = lazy(() => import("@/components/secoes/Configuracoes"));
@@ -69,9 +66,7 @@ const SECOES: SecaoItem[] = [
   { id: "calendario", nome: "Calendário", icone: CalendarDays, C: Calendario },
   { id: "extrato", nome: "Extrato", icone: Wallet, C: Extrato },
   { id: "contas", nome: "Contas a pagar", icone: ClipboardCheck, C: Contas },
-  { id: "parcelados", nome: "Parcelados", icone: CreditCard, C: Parcelados },
-  { id: "faturas", nome: "Faturas", icone: Receipt, C: Faturas },
-  { id: "assinaturas", nome: "Assinaturas", icone: Repeat2, C: Assinaturas },
+  { id: "financas", nome: "Finanças", icone: Banknote, C: Financas },
   { id: "mercado", nome: "Mercado", icone: ShoppingCart, C: Mercado },
   { id: "investimentos", nome: "Investimentos", icone: PiggyBank, C: InvestimentosMetas },
   { id: "config", nome: "Configurações", icone: Settings, C: Configuracoes },
@@ -121,7 +116,6 @@ function App() {
 }
 
 function AppInterno() {
-  const { sair } = useAuth();
   const [ativa, setAtiva] = useState<string>("visao");
   const atual = SECOES.find((s) => s.id === ativa) ?? SECOES[0]!;
   const Conteudo = atual.C;
@@ -164,7 +158,7 @@ function AppInterno() {
 
           <div className="mt-2 border-t border-border pt-3">
             <button
-              onClick={() => sair()}
+              onClick={() => encerrarSessao()}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] font-bold tracking-wide text-muted-foreground transition-all duration-200 hover:bg-surface hover:text-destructive"
             >
               <LogOut size={16} />

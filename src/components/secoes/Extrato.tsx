@@ -1,461 +1,338 @@
-import React, { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, CreditCard, Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useMemo, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CreditCard,
+  Lock,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import LancamentoForm, { EtiquetaResp } from "@/components/LancamentoForm";
+import {
+  Btn,
+  Modal,
+  Panel,
+  SeletorMes,
+  Titulo,
+  Vazio,
+  useConfirm,
+  useMes,
+} from "@/components/ui-kit";
+import { useStore } from "@/lib/store";
+import {
+  brl,
+  dataBR,
+  ehCartao,
+  ehEntrada,
+  faturaFechada,
+  lancamentosDoMes,
+  type Lancamento,
+} from "@/lib/finance";
 
-export interface Lancamento {
-  id: string;
-  data: string;
-  descricao: string;
-  valor: number;
-  tipo: 'entrada' | 'saida' | 'credito';
-  categoria: string;
-  responsavel: string;
-  formaPagamento: string;
-  parcelado?: boolean;
-  numeroParcelas?: number;
-  valorTotal?: number;
-}
+const FILTROS = [
+  { id: "todos", nome: "Todos" },
+  { id: "entrada", nome: "Entradas" },
+  { id: "saida", nome: "Débito/Pix" },
+  { id: "cartao", nome: "Cartão" },
+] as const;
 
-const MOCK_LANCAMENTOS: Lancamento[] = [
-  {
-    id: "1",
-    data: "17/08/2026",
-    descricao: "MERCADO",
-    valor: 2334.00,
-    tipo: "saida",
-    categoria: "MORADIA",
-    responsavel: "GEOVANNA",
-    formaPagamento: "DÉBITO"
-  },
-  {
-    id: "2",
-    data: "17/08/2026",
-    descricao: "Salário / Freela",
-    valor: 3500.00,
-    tipo: "entrada",
-    categoria: "Renda",
-    responsavel: "BRUNO",
-    formaPagamento: "PIX"
-  },
-  {
-    id: "3",
-    data: "15/08/2026",
-    descricao: "Televisão 4K Living",
-    valor: 250.00,
-    tipo: "credito",
-    categoria: "Eletrônicos",
-    responsavel: "BRUNO",
-    formaPagamento: "Cartão de Crédito",
-    parcelado: true,
-    numeroParcelas: 10,
-    valorTotal: 2500.00
+type FiltroId = (typeof FILTROS)[number]["id"];
+
+export default function Extrato() {
+  const { data, setData } = useStore();
+  const m = useMes();
+  const { confirmar, elemento } = useConfirm();
+
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<FiltroId>("todos");
+  const [selecionado, setSelecionado] = useState<Lancamento | null>(null);
+  const [form, setForm] = useState<{ aberto: boolean; item?: Lancamento }>({ aberto: false });
+
+  // Lançamentos à vista (entradas + saídas) do mês/ano selecionado
+  const doMes = useMemo(
+    () => lancamentosDoMes(data.lancamentos, m.mes, m.ano),
+    [data.lancamentos, m.mes, m.ano],
+  );
+
+  const entradas = useMemo(() => doMes.filter(ehEntrada).reduce((s, l) => s + l.valor, 0), [doMes]);
+  const saidasDebito = useMemo(
+    () =>
+      doMes
+        .filter((l) => !ehEntrada(l) && !ehCartao(l.formaPagamento))
+        .reduce((s, l) => s + l.valor, 0),
+    [doMes],
+  );
+  const saidasCartao = useMemo(
+    () =>
+      doMes
+        .filter((l) => !ehEntrada(l) && ehCartao(l.formaPagamento))
+        .reduce((s, l) => s + l.valor, 0),
+    [doMes],
+  );
+  // Total do Mês = Entradas − (Saídas/Débitos + Cartões)
+  const totalMes = entradas - saidasDebito - saidasCartao;
+
+  const filtrados = useMemo(() => {
+    return doMes
+      .filter((l) => {
+        const bateBusca =
+          l.descricao.toLowerCase().includes(busca.toLowerCase()) ||
+          l.categoria.toLowerCase().includes(busca.toLowerCase());
+        const cartao = ehCartao(l.formaPagamento);
+        const bateFiltro =
+          filtro === "todos" ||
+          (filtro === "entrada" && ehEntrada(l)) ||
+          (filtro === "saida" && !ehEntrada(l) && !cartao) ||
+          (filtro === "cartao" && !ehEntrada(l) && cartao);
+        return bateBusca && bateFiltro;
+      })
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+  }, [doMes, busca, filtro]);
+
+  function salvar(l: Lancamento) {
+    setData((d) => ({
+      ...d,
+      lancamentos: d.lancamentos.some((x) => x.id === l.id)
+        ? d.lancamentos.map((x) => (x.id === l.id ? l : x))
+        : [...d.lancamentos, l],
+    }));
+    setForm({ aberto: false });
   }
-];
 
-export default function ExtratoPage() {
-  const [lancamentos, setLancamentos] = useState<Lancamento[]>(MOCK_LANCAMENTOS);
-  const [busca, setBusca] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<'todos' | 'entrada' | 'saida' | 'credito'>('todos');
-  const [itemSelecionado, setItemSelecionado] = useState<Lancamento | null>(null);
-  const [modalNovoAberto, setModalNovoAberto] = useState(false);
+  function excluir(l: Lancamento) {
+    confirmar(`Excluir "${l.descricao}"?`, () => {
+      setData((d) => ({ ...d, lancamentos: d.lancamentos.filter((x) => x.id !== l.id) }));
+      setSelecionado((atual) => (atual?.id === l.id ? null : atual));
+    });
+  }
 
-  // Formulário
-  const [descricao, setDescricao] = useState('');
-  const [valorInput, setValorInput] = useState('');
-  const [tipo, setTipo] = useState<'entrada' | 'saida' | 'credito'>('saida');
-  const [categoria, setCategoria] = useState('');
-  const [responsavel, setResponsavel] = useState('GEOVANNA');
-  const [parcelado, setParcelado] = useState(false);
-  const [numeroParcelas, setNumeroParcelas] = useState(1);
-
-  // Formatação de centavos (Estilo Caixa Eletrônico)
-  const formatarValorMoeda = (val: string) => {
-    const cleanDigits = val.replace(/\D/g, '');
-    if (!cleanDigits) return 'R$ 0,00';
-    const numberValue = parseFloat(cleanDigits) / 100;
-    return numberValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
-
-  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValorInput(formatarValorMoeda(e.target.value));
-  };
-
-  const handleSalvar = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanDigits = valorInput.replace(/\D/g, '');
-    const valorNumerico = parseFloat(cleanDigits) / 100;
-    if (!descricao || valorNumerico <= 0) return;
-
-    const novoItem: Lancamento = {
-      id: Date.now().toString(),
-      data: new Date().toLocaleDateString('pt-BR'),
-      descricao,
-      valor: valorNumerico,
-      tipo,
-      categoria: categoria || 'GERAL',
-      responsavel: responsavel || 'BRUNO',
-      formaPagamento: tipo === 'entrada' ? 'PIX' : tipo === 'saida' ? 'DÉBITO' : 'CARTÃO DE CRÉDITO',
-      parcelado: tipo === 'credito' && parcelado,
-      numeroParcelas: tipo === 'credito' && parcelado ? numeroParcelas : undefined,
-      valorTotal: tipo === 'credito' && parcelado ? valorNumerico * numeroParcelas : valorNumerico
-    };
-
-    setLancamentos([novoItem, ...lancamentos]);
-    setModalNovoAberto(false);
-    setDescricao('');
-    setValorInput('');
-    setCategoria('');
-    setParcelado(false);
-    setNumeroParcelas(1);
-  };
-
-  const lancamentosFiltrados = lancamentos.filter(item => {
-    const atendeBusca = item.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-                        item.categoria.toLowerCase().includes(busca.toLowerCase());
-    const atendeFiltro = filtroTipo === 'todos' || item.tipo === filtroTipo;
-    return atendeBusca && atendeFiltro;
-  });
-
-  const totalMes = lancamentos.reduce((acc, item) => {
-    if (item.tipo === 'entrada') return acc + item.valor;
-    return acc - item.valor;
-  }, 0);
+  // Regra de trava: depois do fechamento da fatura, lançamentos daquele cartão
+  // ficam bloqueados para edição — a menos que a fatura tenha sido reaberta.
+  function bloqueado(l: Lancamento) {
+    return (
+      !ehEntrada(l) &&
+      ehCartao(l.formaPagamento) &&
+      faturaFechada(data, m.mes, m.ano, l.formaPagamento)
+    );
+  }
 
   return (
-    <div className="space-y-6 p-6 text-white max-w-6xl mx-auto">
-      {/* Cabeçalho no Padrão do Seu App */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-black tracking-wider uppercase">Extrato</h1>
-          <p className="text-xs text-neutral-400 font-medium mt-0.5">
-            TODOS OS LANÇAMENTOS DO MÊS, EM TODAS AS FORMAS DE PAGAMENTO
-          </p>
-        </div>
-
-        <button
-          onClick={() => setModalNovoAberto(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-lg transition-all"
-        >
-          <Plus className="w-4 h-4" /> Novo lançamento
-        </button>
+    <div className="animate-section">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <Titulo sub="Todos os lançamentos do mês, em todas as formas de pagamento">Extrato</Titulo>
+        <Btn onClick={() => setForm({ aberto: true })}>
+          <Plus size={15} /> Novo lançamento
+        </Btn>
       </div>
 
-      {/* Navegação de Mês + Total */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-800 px-3 py-1.5 rounded-lg text-xs font-bold">
-          <button className="hover:text-orange-500"><ChevronLeft className="w-4 h-4" /></button>
-          <span>AGOSTO 2026</span>
-          <button className="hover:text-orange-500"><ChevronRight className="w-4 h-4" /></button>
-        </div>
-
-        <div className="bg-neutral-900 border border-neutral-800 px-4 py-2 rounded-xl">
-          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total do Mês</p>
-          <p className={`text-xl font-black font-mono ${totalMes >= 0 ? 'text-emerald-400' : 'text-orange-500'}`}>
-            R$ {Math.abs(totalMes).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <SeletorMes {...m} />
+        <div className="panel px-4 py-2">
+          <p className="label-xs mb-0.5">Total do mês</p>
+          <p
+            className={`num text-xl font-bold ${totalMes >= 0 ? "text-primary" : "text-destructive"}`}
+          >
+            {totalMes < 0 ? "− " : ""}
+            {brl(Math.abs(totalMes))}
           </p>
         </div>
       </div>
 
-      {/* Barra de Filtros e Busca Tricolor */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-between items-center pt-2">
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="panel p-4">
+          <p className="label-xs">Entradas</p>
+          <p className="num text-lg font-bold text-primary">{brl(entradas)}</p>
+        </div>
+        <div className="panel p-4">
+          <p className="label-xs">Saídas · Débito/Pix</p>
+          <p className="num text-lg font-bold text-destructive">{brl(saidasDebito)}</p>
+        </div>
+        <div className="panel p-4">
+          <p className="label-xs">Saídas · Cartão</p>
+          <p className="num text-lg font-bold text-info">{brl(saidasCartao)}</p>
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-neutral-500" />
-          <Input
-            placeholder="Buscar por descrição ou categoria..."
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <input
+            className="field pl-8"
+            placeholder="Buscar por descrição ou categoria"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="pl-9 bg-neutral-900 border-neutral-800 text-white text-xs h-9"
           />
         </div>
-
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={() => setFiltroTipo('todos')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filtroTipo === 'todos' ? 'bg-orange-500 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFiltroTipo('entrada')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filtroTipo === 'entrada' ? 'bg-emerald-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-            }`}
-          >
-            🟢 Entradas
-          </button>
-          <button
-            onClick={() => setFiltroTipo('saida')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filtroTipo === 'saida' ? 'bg-rose-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-            }`}
-          >
-            🔴 Débito
-          </button>
-          <button
-            onClick={() => setFiltroTipo('credito')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filtroTipo === 'credito' ? 'bg-sky-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-            }`}
-          >
-            🔵 Cartão
-          </button>
-        </div>
-      </div>
-
-      {/* Lista de Movimentações no Estilo Multicap */}
-      <div>
-        <h3 className="text-xs font-black uppercase text-neutral-400 tracking-wider mb-3">
-          Movimentações ({lancamentosFiltrados.length})
-        </h3>
-
-        <div className="space-y-2">
-          {lancamentosFiltrados.map((item) => (
-            <Card
-              key={item.id}
-              onClick={() => setItemSelecionado(item)}
-              className="bg-neutral-900/90 border-neutral-800 hover:border-neutral-700 cursor-pointer transition-all"
+        <div className="flex gap-1.5 overflow-x-auto rounded-2xl bg-card p-1.5">
+          {FILTROS.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFiltro(f.id)}
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] font-bold tracking-wide transition-colors ${
+                filtro === f.id
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <CardContent className="p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {/* Ícone Tricolor */}
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold ${
-                    item.tipo === 'entrada' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                    item.tipo === 'saida' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-                    'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                  }`}>
-                    {item.tipo === 'entrada' && <ArrowUpRight className="w-5 h-5" />}
-                    {item.tipo === 'saida' && <ArrowDownLeft className="w-5 h-5" />}
-                    {item.tipo === 'credito' && <CreditCard className="w-5 h-5" />}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm uppercase text-neutral-100">{item.descricao}</span>
-                      <span className="bg-neutral-800 text-neutral-400 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                        {item.formaPagamento}
-                      </span>
-                    </div>
-
-                    <div className="text-[11px] text-neutral-400 font-medium flex items-center gap-2 mt-0.5">
-                      <span>{item.data}</span>
-                      <span>•</span>
-                      <span>LANÇAMENTO</span>
-                      <span>•</span>
-                      <span>{item.categoria}</span>
-                      <span>•</span>
-                      <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 font-bold px-2 py-0.2 rounded-full text-[10px]">
-                        ● {item.responsavel}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className={`font-mono text-base font-extrabold ${
-                    item.tipo === 'entrada' ? 'text-emerald-400' :
-                    item.tipo === 'saida' ? 'text-white' : 'text-sky-400'
-                  }`}>
-                    R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-
-                  {/* Parcelas Exibidas estilo $X \times \text{valor}$ */}
-                  {item.parcelado && item.numeroParcelas && (
-                    <p className="text-[11px] text-sky-400 font-mono font-bold">
-                      {item.numeroParcelas}x de R$ {item.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              {f.nome}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Modal Detalhamento */}
-      <Dialog open={!!itemSelecionado} onOpenChange={() => setItemSelecionado(null)}>
-        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-black uppercase">Detalhes da Transação</DialogTitle>
-          </DialogHeader>
-
-          {itemSelecionado && (
-            <div className="space-y-3 pt-2 text-xs">
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Descrição:</span>
-                <span className="font-bold text-neutral-100">{itemSelecionado.descricao}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Data:</span>
-                <span>{itemSelecionado.data}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Categoria:</span>
-                <span className="bg-neutral-800 px-2 py-0.5 rounded font-bold">{itemSelecionado.categoria}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Responsável:</span>
-                <span className="text-orange-400 font-bold">{itemSelecionado.responsavel}</span>
-              </div>
-              <div className="flex justify-between border-b border-neutral-800 pb-2">
-                <span className="text-neutral-400">Forma de Pagamento:</span>
-                <span>{itemSelecionado.formaPagamento}</span>
-              </div>
-
-              {itemSelecionado.parcelado && (
-                <>
-                  <div className="flex justify-between border-b border-neutral-800 pb-2">
-                    <span className="text-neutral-400">Número de Parcelas:</span>
-                    <span className="text-sky-400 font-bold">{itemSelecionado.numeroParcelas}x</span>
-                  </div>
-                  <div className="flex justify-between border-b border-neutral-800 pb-2">
-                    <span className="text-neutral-400">Valor Total da Compra:</span>
-                    <span className="font-mono text-sky-400 font-bold">
-                      R$ {itemSelecionado.valorTotal?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      <Panel titulo={`Movimentações (${filtrados.length})`}>
+        {filtrados.length === 0 ? (
+          <Vazio>Nenhum lançamento encontrado neste mês</Vazio>
+        ) : (
+          <ul className="space-y-2">
+            {filtrados.map((l) => {
+              const cartao = ehCartao(l.formaPagamento);
+              const Icone = ehEntrada(l) ? ArrowUpRight : cartao ? CreditCard : ArrowDownLeft;
+              const cor = ehEntrada(l) ? "text-primary" : cartao ? "text-info" : "text-destructive";
+              const trava = bloqueado(l);
+              return (
+                <li
+                  key={l.id}
+                  onClick={() => setSelecionado(l)}
+                  className="panel-hover flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2.5"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-lg bg-card ${cor}`}
+                    >
+                      <Icone size={16} />
                     </span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate text-xs font-bold">{l.descricao}</p>
+                        {trava && (
+                          <span className="flex items-center gap-1 rounded-md bg-destructive/15 px-1.5 py-0.5 text-[9px] font-bold text-destructive">
+                            <Lock size={9} /> Fatura fechada
+                          </span>
+                        )}
+                      </div>
+                      <p className="num truncate text-[10px] font-semibold text-muted-foreground">
+                        {dataBR(l.data)} · {l.categoria} · {l.formaPagamento} ·{" "}
+                        <EtiquetaResp nome={l.responsavel} />
+                      </p>
+                    </div>
                   </div>
-                </>
-              )}
-
-              <div className="flex justify-between pt-2 text-sm font-black">
-                <span>Valor Registrado:</span>
-                <span className="font-mono text-orange-500">
-                  R$ {itemSelecionado.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Novo Lançamento */}
-      <Dialog open={modalNovoAberto} onOpenChange={setModalNovoAberto}>
-        <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-black uppercase">Novo Lançamento</DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSalvar} className="space-y-4 pt-2">
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">TIPO DE OPERAÇÃO</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTipo('entrada')}
-                  className={`py-2 text-xs font-bold rounded-lg border ${
-                    tipo === 'entrada' ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
-                  }`}
-                >
-                  🟢 Receita
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipo('saida')}
-                  className={`py-2 text-xs font-bold rounded-lg border ${
-                    tipo === 'saida' ? 'bg-rose-600 border-rose-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
-                  }`}
-                >
-                  🔴 Débito/PIX
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipo('credito')}
-                  className={`py-2 text-xs font-bold rounded-lg border ${
-                    tipo === 'credito' ? 'bg-sky-600 border-sky-500 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
-                  }`}
-                >
-                  🔵 Cartão
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">DESCRIÇÃO</label>
-              <Input
-                placeholder="Ex: Mercado, Luz, Salário"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                className="bg-neutral-800 border-neutral-700 text-white text-xs h-9"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-[11px] text-neutral-400 font-bold block mb-1">VALOR (DIGITE APENAS OS NÚMEROS)</label>
-              <Input
-                type="text"
-                placeholder="R$ 0,00"
-                value={valorInput}
-                onChange={handleValorChange}
-                className="bg-neutral-800 border-neutral-700 text-orange-400 font-mono text-base font-bold h-10"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-neutral-400 font-bold block mb-1">CATEGORIA</label>
-                <Input
-                  placeholder="Ex: Moradia"
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                  className="bg-neutral-800 border-neutral-700 text-white text-xs h-9"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-neutral-400 font-bold block mb-1">RESPONSÁVEL</label>
-                <Input
-                  placeholder="Ex: Geovanna"
-                  value={responsavel}
-                  onChange={(e) => setResponsavel(e.target.value)}
-                  className="bg-neutral-800 border-neutral-700 text-white text-xs h-9"
-                />
-              </div>
-            </div>
-
-            {tipo === 'credito' && (
-              <div className="bg-neutral-800/60 p-3 rounded-lg border border-neutral-700/50 space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="parcelado"
-                    checked={parcelado}
-                    onChange={(e) => setParcelado(e.target.checked)}
-                    className="rounded bg-neutral-900 border-neutral-700 text-orange-500"
-                  />
-                  <label htmlFor="parcelado" className="text-xs font-semibold text-neutral-200">
-                    Compra Parcelada?
-                  </label>
-                </div>
-
-                {parcelado && (
-                  <div>
-                    <label className="text-xs text-neutral-400 block mb-1">Número de Parcelas</label>
-                    <Input
-                      type="number"
-                      min="2"
-                      max="48"
-                      value={numeroParcelas}
-                      onChange={(e) => setNumeroParcelas(Number(e.target.value))}
-                      className="bg-neutral-800 border-neutral-700 text-white text-xs h-9"
-                    />
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className={`num text-sm font-bold ${cor}`}>{brl(l.valor)}</span>
+                    <button
+                      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-info disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setForm({ aberto: true, item: l });
+                      }}
+                      disabled={trava}
+                      title={trava ? "Fatura fechada — reabra em Faturas para editar" : "Editar"}
+                      aria-label="Editar lançamento"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        excluir(l);
+                      }}
+                      disabled={trava}
+                      title={trava ? "Fatura fechada — reabra em Faturas para excluir" : "Excluir"}
+                      aria-label="Excluir lançamento"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
+
+      {/* Modal de detalhes */}
+      <Modal
+        aberto={!!selecionado}
+        onClose={() => setSelecionado(null)}
+        titulo="Detalhes do lançamento"
+        largura="max-w-sm"
+      >
+        {selecionado && (
+          <div className="space-y-2.5 text-xs">
+            <div className="flex justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Descrição</span>
+              <span className="font-bold">{selecionado.descricao}</span>
+            </div>
+            <div className="flex justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Data</span>
+              <span className="num">{dataBR(selecionado.data)}</span>
+            </div>
+            <div className="flex justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Categoria</span>
+              <span className="font-bold">{selecionado.categoria}</span>
+            </div>
+            <div className="flex justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Forma de pagamento</span>
+              <span className="font-bold">{selecionado.formaPagamento}</span>
+            </div>
+            <div className="flex justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Responsável</span>
+              <EtiquetaResp nome={selecionado.responsavel} />
+            </div>
+            <div className="flex justify-between pt-1 text-sm font-bold">
+              <span>{ehEntrada(selecionado) ? "Valor recebido" : "Valor gasto"}</span>
+              <span
+                className={`num ${ehEntrada(selecionado) ? "text-primary" : "text-destructive"}`}
+              >
+                {brl(selecionado.valor)}
+              </span>
+            </div>
+            {bloqueado(selecionado) ? (
+              <p className="mt-1 flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-2 text-[10px] font-bold text-destructive">
+                <Lock size={12} /> Fatura fechada — reabra em Faturas para editar ou excluir
+              </p>
+            ) : (
+              <div className="flex gap-2 pt-3">
+                <Btn
+                  variant="soft"
+                  className="flex-1"
+                  onClick={() => {
+                    setForm({ aberto: true, item: selecionado });
+                    setSelecionado(null);
+                  }}
+                >
+                  <Pencil size={14} /> Editar
+                </Btn>
+                <Btn variant="danger" className="flex-1" onClick={() => excluir(selecionado)}>
+                  <Trash2 size={14} /> Excluir
+                </Btn>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
 
-            <button
-              type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-xs transition-all uppercase tracking-wider mt-2 shadow-md"
-            >
-              Salvar Lançamento
-            </button>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Modal de novo lançamento / edição */}
+      <Modal
+        aberto={form.aberto}
+        onClose={() => setForm({ aberto: false })}
+        titulo={form.item ? "Editar lançamento" : "Novo lançamento"}
+      >
+        <LancamentoForm
+          key={form.item?.id ?? "novo"}
+          inicial={form.item}
+          onSalvar={salvar}
+          onCancelar={() => setForm({ aberto: false })}
+        />
+      </Modal>
+
+      {elemento}
     </div>
   );
 }

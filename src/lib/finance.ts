@@ -1,5 +1,7 @@
 export type Responsavel = string; // nome pessoa A/B ou "Conjunta"
 
+export type TipoLancamento = "entrada" | "saida";
+
 export interface Lancamento {
   id: string;
   data: string; // YYYY-MM-DD
@@ -8,6 +10,8 @@ export interface Lancamento {
   categoria: string;
   formaPagamento: string;
   responsavel: Responsavel;
+  // Opcional para não quebrar lançamentos antigos: ausente = "saida" (comportamento anterior).
+  tipo?: TipoLancamento;
 }
 
 export interface CustoFixo {
@@ -30,6 +34,10 @@ export interface Parcelado {
   categoria: string;
   formaPagamento: string;
   responsavel: Responsavel;
+  /** Posições (1-based) puladas: a série continua, mas aquele mês fica sem essa parcela. */
+  parcelasExcluidas?: number[];
+  /** Valor específico (sobrescreve o valor padrão da série) por posição (1-based). */
+  parcelasEditadas?: Record<number, number>;
 }
 
 export type UnidadeCompra = "UN" | "KG" | "L" | "PCT" | "CX";
@@ -80,6 +88,8 @@ export interface Config {
   categorias: string[];
   formasPagamento: string[];
   categoriasAgenda: string[];
+  /** Categorias em que o saldo não usado do orçamento acumula para o mês seguinte. */
+  categoriasRollover?: string[];
   capa?: string;
   capaPos?: number;
   capaZoom?: number;
@@ -96,9 +106,10 @@ export interface AppData {
   metas: Meta[];
   investimentos: Investimento[];
   pagamentos: Record<string, boolean>;
+  /** Chaves "AAAA-MM:FormaDePagamento" de faturas reabertas manualmente após o fechamento. */
+  faturasReabertas?: string[];
   config: Config;
 }
-
 
 export const CATEGORIAS_PADRAO = [
   "Moradia",
@@ -157,6 +168,7 @@ export const dadosIniciais = (): AppData => ({
   metas: [],
   investimentos: [],
   pagamentos: {},
+  faturasReabertas: [],
 
   config: {
     pessoaA: "Geovanna",
@@ -166,6 +178,7 @@ export const dadosIniciais = (): AppData => ({
     categorias: [...CATEGORIAS_PADRAO],
     formasPagamento: [...FORMAS_PADRAO],
     categoriasAgenda: [...CATEGORIAS_AGENDA_PADRAO],
+    categoriasRollover: [],
   },
 });
 
@@ -192,8 +205,8 @@ export const hojeISO = () => {
 
 export const chaveMes = (m: number, y: number) => `${y}-${String(m + 1).padStart(2, "0")}`;
 
-/** Posição da parcela no mês alvo (1-based). 0 = não vigente. */
-export function posicaoParcela(p: Parcelado, m: number, y: number): number {
+/** Posição da parcela no mês alvo (1-based), ignorando exclusões pontuais. 0 = fora do prazo. */
+export function posicaoParcelaBruta(p: Parcelado, m: number, y: number): number {
   const partes = p.dataCompra.split("-").map(Number);
   const ay = partes[0] ?? 0;
   const am = partes[1] ?? 1;
@@ -201,8 +214,19 @@ export function posicaoParcela(p: Parcelado, m: number, y: number): number {
   return pos >= 1 && pos <= p.numeroParcelas ? pos : 0;
 }
 
-export const valorParcela = (p: Parcelado) =>
-  p.numeroParcelas > 0 ? p.valorTotal / p.numeroParcelas : 0;
+/** Posição da parcela no mês alvo (1-based). 0 = não vigente (fora do prazo ou excluída neste mês). */
+export function posicaoParcela(p: Parcelado, m: number, y: number): number {
+  const pos = posicaoParcelaBruta(p, m, y);
+  if (pos > 0 && p.parcelasExcluidas?.includes(pos)) return 0;
+  return pos;
+}
+
+/** Valor da parcela. Se `pos` for informado e essa posição tiver um valor editado, usa-o no lugar do padrão. */
+export const valorParcela = (p: Parcelado, pos?: number) => {
+  const base = p.numeroParcelas > 0 ? p.valorTotal / p.numeroParcelas : 0;
+  if (pos && p.parcelasEditadas?.[pos] !== undefined) return p.parcelasEditadas[pos] as number;
+  return base;
+};
 
 export const fixoAtivo = (c: CustoFixo, m: number) => c.mesesAtivos.includes(m);
 
@@ -212,20 +236,30 @@ export const lancamentosDoMes = (l: Lancamento[], m: number, y: number) =>
     return partes[0] === y && (partes[1] ?? 0) - 1 === m;
   });
 
+export const ehEntrada = (l: Lancamento) => l.tipo === "entrada";
+
 export function totaisDoMes(d: AppData, m: number, y: number) {
-  const aVista = lancamentosDoMes(d.lancamentos, m, y).reduce((s, x) => s + x.valor, 0);
-  const parcelados = d.parcelados
-    .filter((p) => posicaoParcela(p, m, y) > 0)
-    .reduce((s, p) => s + valorParcela(p), 0);
+  const doMes = lancamentosDoMes(d.lancamentos, m, y);
+  const receitas = doMes.filter(ehEntrada).reduce((s, x) => s + x.valor, 0);
+  const aVista = doMes.filter((x) => !ehEntrada(x)).reduce((s, x) => s + x.valor, 0);
+  const parcelados = d.parcelados.reduce((s, p) => {
+    const pos = posicaoParcela(p, m, y);
+    return pos > 0 ? s + valorParcela(p, pos) : s;
+  }, 0);
   const fixos = d.custosFixos.filter((c) => fixoAtivo(c, m)).reduce((s, c) => s + c.valor, 0);
-  return { aVista, parcelados, fixos, total: aVista + parcelados + fixos };
+  return { receitas, aVista, parcelados, fixos, total: aVista + parcelados + fixos };
 }
 
 export function porCategoria(d: AppData, m: number, y: number): Record<string, number> {
   const acc: Record<string, number> = {};
   const add = (cat: string, v: number) => (acc[cat] = (acc[cat] ?? 0) + v);
-  lancamentosDoMes(d.lancamentos, m, y).forEach((l) => add(l.categoria, l.valor));
-  d.parcelados.forEach((p) => posicaoParcela(p, m, y) > 0 && add(p.categoria, valorParcela(p)));
+  lancamentosDoMes(d.lancamentos, m, y)
+    .filter((l) => !ehEntrada(l))
+    .forEach((l) => add(l.categoria, l.valor));
+  d.parcelados.forEach((p) => {
+    const pos = posicaoParcela(p, m, y);
+    if (pos > 0) add(p.categoria, valorParcela(p, pos));
+  });
   d.custosFixos.forEach((c) => fixoAtivo(c, m) && add(c.categoria, c.valor));
   return acc;
 }
@@ -233,10 +267,34 @@ export function porCategoria(d: AppData, m: number, y: number): Record<string, n
 export function porResponsavel(d: AppData, m: number, y: number): Record<string, number> {
   const acc: Record<string, number> = {};
   const add = (r: string, v: number) => (acc[r] = (acc[r] ?? 0) + v);
-  lancamentosDoMes(d.lancamentos, m, y).forEach((l) => add(l.responsavel, l.valor));
-  d.parcelados.forEach((p) => posicaoParcela(p, m, y) > 0 && add(p.responsavel, valorParcela(p)));
+  lancamentosDoMes(d.lancamentos, m, y)
+    .filter((l) => !ehEntrada(l))
+    .forEach((l) => add(l.responsavel, l.valor));
+  d.parcelados.forEach((p) => {
+    const pos = posicaoParcela(p, m, y);
+    if (pos > 0) add(p.responsavel, valorParcela(p, pos));
+  });
   d.custosFixos.forEach((c) => fixoAtivo(c, m) && add(c.responsavel, c.valor));
   return acc;
+}
+
+/**
+ * Teto "efetivo" de uma categoria no mês: o valor configurado para o mês, somado
+ * (se a categoria tiver rollover ativado) ao saldo não usado do mês anterior.
+ * O acúmulo considera só um mês para trás, não a cadeia inteira do histórico.
+ */
+export function tetoEfetivo(d: AppData, cat: string, m: number, y: number): number {
+  const tetoBase = d.tetos[chaveMes(m, y)]?.[cat] ?? 0;
+  if (!d.config.categoriasRollover?.includes(cat)) return tetoBase;
+
+  const mAnt = m === 0 ? 11 : m - 1;
+  const yAnt = m === 0 ? y - 1 : y;
+  const tetoAnt = d.tetos[chaveMes(mAnt, yAnt)]?.[cat] ?? 0;
+  if (tetoAnt <= 0) return tetoBase;
+
+  const gastoAnt = porCategoria(d, mAnt, yAnt)[cat] ?? 0;
+  const sobra = Math.max(0, tetoAnt - gastoAnt);
+  return tetoBase + sobra;
 }
 
 export function vencendoEmBreve(d: AppData) {
@@ -252,6 +310,26 @@ export function vencendoEmBreve(d: AppData) {
 
 export const fechamentoDoMes = (d: AppData, m: number, y: number) =>
   d.config.fechamentosPorMes[chaveMes(m, y)] ?? d.config.diaFechamentoPadrao;
+
+/** Chave de identificação de uma fatura (mês + forma de pagamento). */
+export const chaveFatura = (m: number, y: number, forma: string) => `${chaveMes(m, y)}:${forma}`;
+
+/** true se já passamos da data de fechamento daquele ciclo (não considera reabertura manual). */
+export function faturaFechadaPorData(d: AppData, m: number, y: number): boolean {
+  const fechamento = fechamentoDoMes(d, m, y);
+  const ultimoDia = new Date(y, m + 1, 0).getDate();
+  const dia = Math.min(Math.max(fechamento || 1, 1), ultimoDia);
+  return new Date() > new Date(y, m, dia, 23, 59, 59);
+}
+
+/**
+ * Regra de trava: depois do fechamento, os lançamentos daquele ciclo/cartão ficam
+ * bloqueados para edição — a menos que alguém tenha reaberto manualmente a fatura.
+ */
+export function faturaFechada(d: AppData, m: number, y: number, forma: string): boolean {
+  if (!faturaFechadaPorData(d, m, y)) return false;
+  return !(d.faturasReabertas?.includes(chaveFatura(m, y, forma)) ?? false);
+}
 
 export function subtotalItem(i: ItemCompra) {
   const preco = i.preco ?? 0;
@@ -326,7 +404,7 @@ export function contasDoMes(d: AppData, m: number, y: number): ContaMes[] {
       chave: `${mk}:parc:${p.id}`,
       nome: p.descricao,
       detalhe: `Parcela ${pos}/${p.numeroParcelas} · ${p.categoria}`,
-      valor: valorParcela(p),
+      valor: valorParcela(p, pos),
       vencimento: isoDia(Number(p.dataCompra.split("-")[2]), m, y),
       tipo: "Parcelado",
       responsavel: p.responsavel,
@@ -338,8 +416,11 @@ export function contasDoMes(d: AppData, m: number, y: number): ContaMes[] {
       .filter((l) => l.formaPagamento === forma)
       .reduce((s, l) => s + l.valor, 0);
     const parcelas = d.parcelados
-      .filter((p) => p.formaPagamento === forma && posicaoParcela(p, m, y) > 0)
-      .reduce((s, p) => s + valorParcela(p), 0);
+      .filter((p) => p.formaPagamento === forma)
+      .reduce((s, p) => {
+        const pos = posicaoParcela(p, m, y);
+        return pos > 0 ? s + valorParcela(p, pos) : s;
+      }, 0);
     const fixos = d.custosFixos
       .filter((c) => c.formaPagamento === forma && fixoAtivo(c, m))
       .reduce((s, c) => s + c.valor, 0);

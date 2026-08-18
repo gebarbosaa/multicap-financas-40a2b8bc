@@ -49,6 +49,7 @@ export default function LancamentoForm({
       categoria: data.config.categorias[0] ?? "Outros",
       formaPagamento: data.config.formasPagamento[0] ?? "Débito",
       responsavel: resps[0] ?? "Conjunta",
+      tipo: "saida",
     },
   );
   const [valorTxt, setValorTxt] = useState(inicial ? String(inicial.valor) : "");
@@ -62,6 +63,34 @@ export default function LancamentoForm({
         onSalvar({ ...form, valor: num(valorTxt) });
       }}
     >
+      <div className="sm:col-span-2">
+        <span className="label-xs">Tipo de lançamento</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, tipo: "saida" })}
+            className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+              form.tipo !== "entrada"
+                ? "border-primary bg-accent text-accent-foreground"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            Saída / Despesa
+          </button>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, tipo: "entrada" })}
+            className={`rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+              form.tipo === "entrada"
+                ? "border-primary bg-accent text-accent-foreground"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            Entrada / Receita
+          </button>
+        </div>
+      </div>
+
       {!dataFixa && (
         <Campo label="Data">
           <InputData value={form.data} onChange={(iso) => setForm({ ...form, data: iso })} />

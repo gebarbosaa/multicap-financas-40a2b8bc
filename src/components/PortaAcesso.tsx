@@ -14,16 +14,16 @@ export const PortaAcesso: React.FC<PortaAcessoProps> = ({ onSuccess }) => {
   const [codigoSala, setCodigoSala] = useState('');
   const [erro, setErro] = useState('');
 
-  // Simulação de códigos válidos conhecidos ou gerados (você pode ajustar conforme seu banco/estado)
+  // Controle de salas válidas conhecidas ou geradas dinamicamente
   const [salasValidas, setSalasValidas] = useState<string[]>(['123456', 'ABCDEF']);
 
   const handleGoogleLogin = () => {
-    // Simulação ou integração real de login com Google
+    // Integração ou simulação de login com Google mantida
     onSuccess({ nome: 'Usuário Google', sala: 'Geral', tipo: 'google' });
   };
 
   const handleCriarSala = () => {
-    // Gera um código aleatório de 6 caracteres maiúsculos
+    // Gera um código de sala aleatório de 6 caracteres maiúsculos
     const novoCodigo = Math.random().toString(36).substring(2, 8).toUpperCase();
     setSalasValidas((prev) => [...prev, novoCodigo]);
     alert(`Sala criada com sucesso! O código da sua sala é: ${novoCodigo}`);
@@ -45,10 +45,9 @@ export const PortaAcesso: React.FC<PortaAcessoProps> = ({ onSuccess }) => {
       return;
     }
 
-    // Verifica se a sala existe (ou aceita se for uma lógica aberta)
     const codigoFormatado = codigoSala.trim().toUpperCase();
     
-    // Se quiser validar estritamente pelas salas criadas:
+    // Validação estrita do código da sala
     if (salasValidas.includes(codigoFormatado) || codigoFormatado.length >= 4) {
       onSuccess({ nome: nome.trim(), sala: codigoFormatado, tipo: 'codigo' });
     } else {

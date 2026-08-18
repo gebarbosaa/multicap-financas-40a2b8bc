@@ -31,16 +31,39 @@ interface Ctx {
 
 const StoreContext = createContext<Ctx | null>(null);
 
+/** Garante lista de textos, mesmo se dados antigos guardaram objetos. */
+function textos(v: unknown, padrao: string[]): string[] {
+  if (!Array.isArray(v)) return padrao;
+  const out = v
+    .map((x) =>
+      typeof x === "string"
+        ? x
+        : x && typeof x === "object"
+          ? String((x as { nome?: unknown; label?: unknown }).nome ?? (x as { label?: unknown }).label ?? "")
+          : String(x ?? ""),
+    )
+    .filter((s) => s.trim().length > 0);
+  return out.length ? Array.from(new Set(out)) : padrao;
+}
+
 function merge(raw: unknown): AppData {
   const base = dadosIniciais();
   if (!raw || typeof raw !== "object") return base;
   const r = raw as Partial<AppData>;
+  const config = { ...base.config, ...(r.config ?? {}) };
   return {
     ...base,
     ...r,
-    config: { ...base.config, ...(r.config ?? {}) },
+    config: {
+      ...config,
+      categorias: textos(config.categorias, base.config.categorias),
+      formasPagamento: textos(config.formasPagamento, base.config.formasPagamento),
+      categoriasAgenda: textos(config.categoriasAgenda, base.config.categoriasAgenda),
+      categoriasRollover: textos(config.categoriasRollover, []),
+    },
   };
 }
+
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setDataState] = useState<AppData>(() => dadosIniciais());

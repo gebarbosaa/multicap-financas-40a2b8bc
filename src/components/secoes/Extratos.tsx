@@ -37,7 +37,7 @@ export default function Extratos({ embutido }: { embutido?: boolean } = {}) {
       forma: l.formaPagamento,
       responsavel: l.responsavel,
       valor: l.valor,
-      tipo: l.tipo,
+      tipo: l.tipo ?? ("saida" as const),
     })),
     ...data.custosFixos
       .filter((c) => fixoAtivo(c, m.mes))
@@ -57,14 +57,14 @@ export default function Extratos({ embutido }: { embutido?: boolean } = {}) {
       .filter((x) => x.pos > 0)
       .map(({ p, pos }) => ({
         id: `parc-${p.id}-${pos}`,
-        data: dia(p.diaVencimento ?? 10),
+        data: p.dataCompra || dia(10),
         descricao: p.descricao,
         categoria: p.categoria,
         forma: p.formaPagamento,
         responsavel: p.responsavel,
         valor: valorParcela(p, pos),
         tipo: "saida" as const,
-        marcador: `Parcela ${pos} de ${p.totalParcelas}`,
+        marcador: `Parcela ${pos} de ${p.numeroParcelas}`,
       })),
   ].sort((a, b) => b.data.localeCompare(a.data));
 

@@ -22,7 +22,7 @@ import VisaoGeral from "@/components/secoes/VisaoGeral";
 // JS da tela quando o usuário realmente entra nela, deixando a abertura do
 // app mais rápida.
 const Calendario = lazy(() => import("@/components/secoes/Calendario"));
-const Extrato = lazy(() => import("@/components/secoes/Extrato"));
+const Extrato = lazy(() => import("@/components/secoes/Extratos"));
 const Contas = lazy(() => import("@/components/secoes/Contas"));
 // Finanças agrupa, em sub-abas, Custos Fixos, Parcelamentos, Cartão de
 // Crédito (faturas) e Orçamento Mensal.

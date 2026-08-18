@@ -1,8 +1,9 @@
 import { useState } from "react";
 import InputData from "@/components/InputData";
+import InputMoeda from "@/components/InputMoeda";
 import { Btn, Campo } from "@/components/ui-kit";
 import { useStore } from "@/lib/store";
-import { corPessoa, hojeISO, num, uid, type Lancamento } from "@/lib/finance";
+import { corPessoa, hojeISO, uid, type Lancamento } from "@/lib/finance";
 
 export function rotuloResp(r: string) {
   return r === "Conjunta" ? "Ambas" : r;
@@ -52,15 +53,14 @@ export default function LancamentoForm({
       tipo: "saida",
     },
   );
-  const [valorTxt, setValorTxt] = useState(inicial ? String(inicial.valor) : "");
 
   return (
     <form
       className="grid gap-3 sm:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!form.descricao.trim()) return;
-        onSalvar({ ...form, valor: num(valorTxt) });
+        if (!form.descricao.trim() || form.valor <= 0) return;
+        onSalvar(form);
       }}
     >
       <div className="sm:col-span-2">
@@ -106,13 +106,7 @@ export default function LancamentoForm({
         />
       </Campo>
       <Campo label="Valor (R$)">
-        <input
-          className="field num"
-          inputMode="decimal"
-          value={valorTxt}
-          placeholder="0,00"
-          onChange={(e) => setValorTxt(e.target.value)}
-        />
+        <InputMoeda value={form.valor} onChange={(v) => setForm({ ...form, valor: v })} />
       </Campo>
       <Campo label="Categoria">
         <select

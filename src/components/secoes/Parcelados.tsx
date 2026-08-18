@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import InputData from "@/components/InputData";
+import InputMoeda from "@/components/InputMoeda";
 import { rotuloResp, useResponsaveis, EtiquetaResp } from "@/components/LancamentoForm";
 import {
   Btn,
@@ -20,7 +21,6 @@ import {
   ehCartao,
   faturaFechada,
   hojeISO,
-  num,
   posicaoParcela,
   posicaoParcelaBruta,
   uid,
@@ -49,7 +49,7 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
       aberto: false,
     },
   );
-  const [valorUnicoTxt, setValorUnicoTxt] = useState("");
+  const [valorUnico, setValorUnico] = useState(0);
 
   const novo = (): Parcelado => ({
     id: uid(),
@@ -63,19 +63,16 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
   });
 
   const [form, setForm] = useState<Parcelado>(novo());
-  const [totalTxt, setTotalTxt] = useState("");
 
   const abrir = (item?: Parcelado) => {
     setForm(item ? { ...item } : novo());
-    setTotalTxt(item ? String(item.valorTotal) : "");
     setModal({ aberto: true, ...(item ? { item } : {}) });
   };
 
   const salvar = () => {
-    if (!form.descricao.trim()) return;
+    if (!form.descricao.trim() || form.valorTotal <= 0) return;
     const item = {
       ...form,
-      valorTotal: num(totalTxt),
       numeroParcelas: Math.max(1, form.numeroParcelas),
     };
     setData((d) => ({
@@ -99,7 +96,7 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
     }));
 
   const abrirEdicaoUnica = (item: Parcelado, pos: number) => {
-    setValorUnicoTxt(String(valorParcela(item, pos)));
+    setValorUnico(valorParcela(item, pos));
     setModalUnica({ aberto: true, item, pos });
   };
 
@@ -110,7 +107,7 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
       ...d,
       parcelados: d.parcelados.map((x) =>
         x.id === item.id
-          ? { ...x, parcelasEditadas: { ...(x.parcelasEditadas ?? {}), [pos]: num(valorUnicoTxt) } }
+          ? { ...x, parcelasEditadas: { ...(x.parcelasEditadas ?? {}), [pos]: valorUnico } }
           : x,
       ),
     }));
@@ -129,7 +126,7 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
     else confirmar(`Excluir "${item.descricao}"?`, () => excluirSerieCompleta(item.id));
   };
 
-  const parcelaPreview = num(totalTxt) / Math.max(1, form.numeroParcelas);
+  const parcelaPreview = form.valorTotal / Math.max(1, form.numeroParcelas);
   const totalVigente = data.parcelados.reduce((s, p) => {
     const pos = posicaoParcela(p, m.mes, m.ano);
     return pos > 0 ? s + valorParcela(p, pos) : s;
@@ -290,12 +287,7 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
         largura="max-w-sm"
       >
         <Campo label="Valor desta parcela (R$)">
-          <input
-            className="field num"
-            inputMode="decimal"
-            value={valorUnicoTxt}
-            onChange={(e) => setValorUnicoTxt(e.target.value)}
-          />
+          <InputMoeda value={valorUnico} onChange={setValorUnico} autoFocus />
         </Campo>
         <p className="mt-2 text-[10px] font-semibold text-muted-foreground">
           Vale só para esta ocorrência; as demais parcelas da série continuam com o valor padrão.
@@ -329,11 +321,9 @@ export default function Parcelados({ embutido }: { embutido?: boolean } = {}) {
           </Campo>
 
           <Campo label="Valor total (R$)">
-            <input
-              className="field num"
-              inputMode="decimal"
-              value={totalTxt}
-              onChange={(e) => setTotalTxt(e.target.value)}
+            <InputMoeda
+              value={form.valorTotal}
+              onChange={(v) => setForm({ ...form, valorTotal: v })}
             />
           </Campo>
           <Campo label="Nº de parcelas">

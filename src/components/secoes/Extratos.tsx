@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
-import { Lancamento, dataBR, hojeISO, MESES } from "./finance";
+import { Lancamento, dataBR, hojeISO, MESES } from "@/lib/finance";
 
-export function Extrato() {
+function Extrato() {
   const { data, setData } = useStore();
   
   // Controle do Mês Selecionado (Ano/Mês atual)
@@ -422,3 +422,6 @@ export function Extrato() {
     </div>
   );
 }
+
+export default Extrato;
+export { Extrato };

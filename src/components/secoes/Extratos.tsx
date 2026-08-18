@@ -12,6 +12,7 @@ export function Extratos() {
     if (!user) return;
 
     setLoading(true);
+    // Buscando lançamentos ou faturas/registros para consolidar o extrato
     const { data, error } = await supabase
       .from('faturas')
       .select('*')
@@ -38,7 +39,7 @@ export function Extratos() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-white">Extrato Consolidado</h2>
-          <p className="text-sm text-gray-400 mt-1">Histórico completo de lançamentos e movimentações.</p>
+          <p className="text-sm text-neutral-400 mt-1">Histórico completo de lançamentos e movimentações.</p>
         </div>
       </div>
 
